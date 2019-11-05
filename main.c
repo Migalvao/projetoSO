@@ -1,9 +1,10 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <semaphore.h> // include POSIX semaphores
 #include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <sys/mman.h>
 #include <sys/stat.h>   
 #include <fcntl.h> 
@@ -11,7 +12,7 @@
 #include <sys/wait.h> 
 #include <unistd.h>
 #include <errno.h>
-#include <string.h>
+
 
 typedef struct system_stats
 {
@@ -33,6 +34,12 @@ typedef struct config{
     int qnt_max_partidas;
     int qnt_max_chegadas;
 } configuracoes;
+
+//MESSAGE QUEUE 
+int msg_q_id;
+
+//PIPE
+int fd_pipe;
 
 configuracoes gs_configuracoes;
 
@@ -92,6 +99,16 @@ void le_configuracoes(configuracoes configs ){
 
 void torre_controlo(){
 	printf("Ola sou a torre de controlo. Pid = %d\n", getpid());
+
+    //cria o pipe
+    if ((mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0) && (errno != EEXIST)){
+        printf("Erro ao criar o PIPE\n");
+    } else {
+        printf("->Named Pipe criado.\n");
+    }
+    
+
+
 }
 
 void gestor_simulacao(){
@@ -100,6 +117,17 @@ void gestor_simulacao(){
 }
 
 int main(void){
+
+
+    //MESSAGE QUEUE
+    if ((msg_q_id= msgget(IPC_PRIVATE,IPC_CREAT | 0700))==-1){
+        printf("ERRO ao criar message queue\n");
+    }else
+    {
+        printf("Message queue criada.\n");
+    }
+    //MESSAGE QUEUE CREATED 
+
 	pid_t pid = fork();
 
 	if(pid == 0){
@@ -111,7 +139,4 @@ int main(void){
 		gestor_simulacao();
 		exit(0);
 	}
-
-
-
 }
