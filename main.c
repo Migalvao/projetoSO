@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#define STATS_SEMAPHORE "/stats_semaphore"
+#define SHARED_MEM_NAME "/gestor_simulacao"
 
 typedef struct system_stats
 {
@@ -21,27 +23,33 @@ typedef struct system_stats
 		n_voos_descolados,
 		n_voos_redirecionados,
 		n_voos_rejeitados; 
+    double tempo_medio_aterrar,     //+ ETA
+        tempo_medio_descolar,
+        n_medio_holdings_aterragem,
+        n_medio_holdings_urgencia;
 }estatisticas_sistema;
 
 typedef struct config{
-    int unidade_tempo;
-    int dur_descolagem;
-    int int_descolagem;
-    int dur_aterragem;
-    int int_aterragem;
-    int dur_min;
-    int dur_max;
-    int qnt_max_partidas;
-    int qnt_max_chegadas;
+    int unidade_tempo,
+        dur_descolagem,
+        int_descolagem,
+        dur_aterragem,
+        int_aterragem,
+        dur_min,
+        dur_max,
+        qnt_max_partidas,
+        qnt_max_chegadas;
 } configuracoes;
 
-//MESSAGE QUEUE 
-int msg_q_id;
 
-//PIPE
-int fd_pipe;
+int msg_q_id;   //MESSAGE QUEUE 
+int fd_pipe;    //PIPE
+int shmid;      //SHARED MEMORY
+
+sem_t * sem_stats;      //semaforo para estatisticas
 
 configuracoes gs_configuracoes;
+estatisticas_sistema * estatisticas;
 
 void le_configuracoes(configuracoes configs ){
     char linha[200];
@@ -99,6 +107,31 @@ void le_configuracoes(configuracoes configs ){
 
 void torre_controlo(){
 	printf("Ola sou a torre de controlo. Pid = %d\n", getpid());
+    /*
+    para tentar alterar estatisticas
+    sem_wait(sem_stats);
+
+    estatisticas->qualquercoisa
+
+    sem_post(sem_stats);
+    */
+}
+
+void gestor_simulacao(){
+	printf("Ola sou o gestor de simulacao. Pid = %d\n", getpid());
+    /*
+    para tentar alterar estatisticas
+    sem_wait(sem_stats);
+
+    estatisticas->qualquercoisa
+    
+    sem_post(sem_stats);
+    */
+    }
+
+int main(void){
+
+	le_configuracoes(gs_configuracoes);
 
     //cria o pipe
     if ((mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0) && (errno != EEXIST)){
@@ -106,18 +139,6 @@ void torre_controlo(){
     } else {
         printf("->Named Pipe criado.\n");
     }
-    
-
-
-}
-
-void gestor_simulacao(){
-	printf("Ola sou o gestor de simulacao. Pid = %d\n", getpid());
-    le_configuracoes(gs_configuracoes);
-}
-
-int main(void){
-
 
     //MESSAGE QUEUE
     if ((msg_q_id= msgget(IPC_PRIVATE,IPC_CREAT | 0700))==-1){
@@ -126,17 +147,47 @@ int main(void){
     {
         printf("Message queue criada.\n");
     }
-    //MESSAGE QUEUE CREATED 
 
-	pid_t pid = fork();
+    //SHARED MEMORY
+    if( (shmid = shm_open(SHARED_MEM_NAME,   O_RDWR | O_CREAT ,0777)) == -1){
+        printf("Error creating memory\n");
+        exit(1);
+    }
+
+    //Tamanho da shared memory -> a alterar depois
+    //Para ja so tem tamanho para as estatisticas
+    if (ftruncate(shmid, sizeof(estatisticas_sistema)) == -1){
+        printf("Error defining size\n");
+        exit(1);
+    }
+    //para alterar as estatisticas faz se atraves deste ponteiro   
+    estatisticas = (estatisticas_sistema *) mmap(NULL, sizeof(estatisticas_sistema), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid, 0);
+
+    //SEMAFOROS
+    if((sem_stats = sem_open(STATS_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    //Criacao do processo Torre de Controlo e inicio do servidor
+    pid_t pid = fork();
 
 	if(pid == 0){
 		torre_controlo();
 		exit(0);
 	} 
 
-	else {
-		gestor_simulacao();
-		exit(0);
-	}
+    /*O gestor de simulacao vai receber
+    comandos pelo pipe, le-los, criar
+    as threads necessarias, por na 
+    message queue para a torre de controlo
+    os receber e a torre de controlo guarda
+    essa informacao (sobre os voos) na 
+    shared memory
+    */
+	gestor_simulacao();
+
+    //Apagar recursos
+    //shared memory, pipe, message queue, semaforos, etc
+    exit(0);
 }
