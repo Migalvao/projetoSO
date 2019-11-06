@@ -1,3 +1,5 @@
+//PARA COMPILAR: gcc -Wall -pthread main.c -o -main -lrt
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,9 +14,12 @@
 #include <sys/wait.h> 
 #include <unistd.h>
 #include <errno.h>
+#include <sys/msg.h>
 
 #define STATS_SEMAPHORE "/stats_semaphore"
 #define SHARED_MEM_NAME "/gestor_simulacao"
+#define PIPE_NAME "/command_pipe"
+
 
 typedef struct system_stats
 {
@@ -41,6 +46,18 @@ typedef struct config{
         qnt_max_chegadas;
 } configuracoes;
 
+typedef struct arrival_flight{
+	char fligh_code[10];
+	int init,
+		eta;
+} voo_chegada;
+
+typedef struct departure_flight{
+	char fligh_code[10];
+	int init,
+		fuel;
+} voo_partida;
+
 
 int msg_q_id;   //MESSAGE QUEUE 
 int fd_pipe;    //PIPE
@@ -48,6 +65,8 @@ int shmid;      //SHARED MEMORY
 
 sem_t * sem_stats;      //semaforo para estatisticas
 
+int * array_voos_partida;
+int * array_voos_chegada;
 configuracoes gs_configuracoes;
 estatisticas_sistema * estatisticas;
 
@@ -156,12 +175,18 @@ int main(void){
 
     //Tamanho da shared memory -> a alterar depois
     //Para ja so tem tamanho para as estatisticas
-    if (ftruncate(shmid, sizeof(estatisticas_sistema)) == -1){
+    if (ftruncate(shmid, sizeof(estatisticas_sistema) + gs_configuracoes.qnt_max_partidas * sizeof(voo_partida) + gs_configuracoes.qnt_max_chegadas)*sizeof(voo_partida) == -1){
         printf("Error defining size\n");
         exit(1);
     }
     //para alterar as estatisticas faz se atraves deste ponteiro   
     estatisticas = (estatisticas_sistema *) mmap(NULL, sizeof(estatisticas_sistema), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid, 0);
+    
+    array_voos_partida = (int *)mmap(NULL, gs_configuracoes.qnt_max_partidas * sizeof(voo_partida), PROT_WRITE  | PROT_READ, MAP_SHARED,shmid, sizeof(estatisticas_sistema));
+    //size = gs_configuracoes.qnt_max_partidas
+
+    array_voos_chegada = (int *)mmap(NULL, gs_configuracoes.qnt_max_chegadas * sizeof(voo_chegada), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid, sizeof(estatisticas_sistema) + gs_configuracoes.qnt_max_partidas * sizeof(voo_partida));
+    //size = gs_configuracoes.qnt_max_chegadas
 
     //SEMAFOROS
     if((sem_stats = sem_open(STATS_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
