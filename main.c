@@ -183,8 +183,8 @@ void write_log(char* mensagem){
 
     time(&tempo);
     estrutura_temp = localtime(&tempo);
-    fprintf(f,"%d %d %d %s\n", estrutura_temp->tm_hour, estrutura_temp->tm_min, estrutura_temp->tm_sec, mensagem);
-    printf("%d %d %d %s\n", estrutura_temp->tm_hour, estrutura_temp->tm_min, estrutura_temp->tm_sec, mensagem);
+    fprintf(f,"%d:%d:%d %s\n", estrutura_temp->tm_hour, estrutura_temp->tm_min, estrutura_temp->tm_sec, mensagem);
+    printf("%d:%d:%d %s\n", estrutura_temp->tm_hour, estrutura_temp->tm_min, estrutura_temp->tm_sec, mensagem);
 }
 int main(void){
 
