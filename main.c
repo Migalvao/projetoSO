@@ -76,7 +76,6 @@ void le_configuracoes(configuracoes configs ){
     FILE *f = fopen("configuracoes.txt","r");
     int contador=0;
 
-
     if (f != NULL){
         while (fgets(linha, 200, f) != NULL){
             if (contador==0){ //unidade tempo
@@ -173,8 +172,6 @@ int main(void){
         exit(1);
     }
 
-    //Tamanho da shared memory -> a alterar depois
-    //Para ja so tem tamanho para as estatisticas
     if (ftruncate(shmid, sizeof(estatisticas_sistema) + gs_configuracoes.qnt_max_partidas * sizeof(voo_partida) + gs_configuracoes.qnt_max_chegadas)*sizeof(voo_partida) == -1){
         printf("Error defining size\n");
         exit(1);
