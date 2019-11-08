@@ -1,144 +1,19 @@
-//PARA COMPILAR: gcc -Wall -pthread main.c -o -main -lrt
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <semaphore.h> // include POSIX semaphores
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/stat.h>   
-#include <fcntl.h> 
-#include <sys/types.h> 
-#include <sys/wait.h> 
-#include <unistd.h>
-#include <errno.h>
-#include <sys/msg.h>
-#include <time.h>
-
-#define STATS_SEMAPHORE "/stats_semaphore"
-#define SHARED_MEM_NAME "/gestor_simulacao"
-#define PIPE_NAME "command_pipe"
-#define MAX_SIZE_COMANDO 50
-#define SIZE_HORAS 9
-
-
-typedef struct system_stats
-{
-	int n_voos_criados,
-		n_voos_aterrados,
-		n_voos_descolados,
-		n_voos_redirecionados,
-		n_voos_rejeitados; 
-    double tempo_medio_aterrar,     //+ ETA
-        tempo_medio_descolar,
-        n_medio_holdings_aterragem,
-        n_medio_holdings_urgencia;
-}estatisticas_sistema;
-
-typedef struct config{
-    int unidade_tempo,
-        dur_descolagem,
-        int_descolagem,
-        dur_aterragem,
-        int_aterragem,
-        dur_min,
-        dur_max,
-        qnt_max_partidas,
-        qnt_max_chegadas;
-} configuracoes;
-
-typedef struct arrival_flight{
-	char fligh_code[10];
-	int init,
-		eta;
-} voo_chegada;
-
-typedef struct departure_flight{
-	char fligh_code[10];
-	int init,
-		fuel;
-} voo_partida;
-
+//PARA COMPILAR: gcc -Wall -pthread main.c -o main -lrt
+#include "header.h"
 
 int msg_q_id;   //MESSAGE QUEUE 
 int fd_pipe;    //PIPE
 int shmid;      //SHARED MEMORY
+int * array_voos_partida;
+int * array_voos_chegada;
+
+configuracoes gs_configuracoes;
+estatisticas_sistema * estatisticas;
+
+char comando[MAX_SIZE_COMANDO];
 
 sem_t * sem_stats;      //semaforo para estatisticas
 
-int * array_voos_partida;
-int * array_voos_chegada;
-configuracoes gs_configuracoes;
-estatisticas_sistema * estatisticas;
-char comando[MAX_SIZE_COMANDO];
-
-void write_log(char* mensagem){
-    FILE  *f =fopen("log.txt","a");
-    time_t tempo;
-    struct tm* estrutura_temp;
-    char horas[SIZE_HORAS];
-
-    time(&tempo);
-    estrutura_temp = localtime(&tempo);
-    strftime(horas,SIZE_HORAS,"%I:%M:%S", estrutura_temp);
-    fprintf(f,"%s mensagem: %s\n", horas, mensagem);
-    printf("%s mensagem: %s\n", horas, mensagem);
-}
-
-void le_configuracoes(configuracoes configs ){
-    char linha[200];
-    char u_tempo[100], d_desc[100], i_desc[100], d_aterr[100], i_aterr[100], d_min[100], d_max[100], max_part[100], max_cheg[100];
-    FILE *f = fopen("configuracoes.txt","r");
-    int contador=0;
-
-    if (f != NULL){
-        while (fgets(linha, 200, f) != NULL){
-            if (contador==0){ //unidade tempo
-                sscanf(linha, " %[^\n]", u_tempo);
-                configs.unidade_tempo= atoi(u_tempo);
-                //printf(" unidade tempo %d\n", configs.unidade_tempo);
-                contador++;
-            }
-            else if(contador==1){ //duracao dscolagem e intervalo descolagem
-                sscanf(linha, "%[^,], %s", d_desc, i_desc );
-                configs.dur_descolagem= atoi(d_desc);
-                configs.int_descolagem= atoi(i_desc);
-                //printf("duracao descolagem %d intervalo descolagem %d\n", configs.dur_descolagem, configs.int_descolagem);
-                contador++;
-            }
-            else if (contador==2){ //duracao aterragem e intervalo aterragem
-                sscanf(linha, "%[^,], %s", d_aterr, i_aterr);
-                configs.dur_aterragem= atoi(d_aterr);
-                configs.int_aterragem= atoi(i_aterr);
-                //printf("duracao aterragem %d intervalo aterragem %d\n", configs.dur_aterragem, configs.int_aterragem);
-                contador++;
-            }
-            else if (contador==3){
-                sscanf(linha, "%[^,], %s",d_min, d_max );
-                configs.dur_min=atoi(d_min);
-                configs.dur_max=atoi(d_max);
-                //printf("duracao minima %d duracao maxima %d\n", configs.dur_min, configs.dur_max);
-                contador++;
-            }
-            else if (contador==4){
-                sscanf(linha, " %[^\n]",max_part);
-                configs.qnt_max_partidas=atoi(max_part);
-                //printf("quantidade maxima de paertidas %d\n", configs.qnt_max_partidas);
-                contador++;
-            }
-            else if (contador==5){
-                sscanf(linha, " %[^\n]", max_cheg);
-                configs.qnt_max_chegadas=atoi(max_cheg);
-                //printf("quantidade maxima de chegadas %d\n", configs.qnt_max_chegadas);
-                contador++;
-            }
-        }
-    } else
-        printf ("ERRO A ABRIR FICHEIRO!");
-    fclose (f);
-}
 
 void torre_controlo(){
 	printf("Ola sou a torre de controlo. Pid = %d\n", getpid());
@@ -153,9 +28,13 @@ void torre_controlo(){
 }
 
 void gestor_simulacao(){
-	printf("Ola sou o gestor de simulacao. Pid = %d\n", getpid());
+    printf("2\n");
+    clock_t t_inicial = clock() / CLOCKS_PER_SEC;
+    printf("3\n");
+    write_log("Servidor iniciado\n");
+    printf("4\n");
+    //create_thread(150, gs_configuracoes.unidade_tempo);
 
-    write_log("olaaaaa");
 
     read(fd_pipe,comando,MAX_SIZE_COMANDO);
     printf("pipe lido: %s\n",comando);
@@ -167,12 +46,13 @@ void gestor_simulacao(){
     
     sem_post(sem_stats);
     */
+    wait(NULL);
     }
 
 
 int main(void){
 
-	le_configuracoes(gs_configuracoes);
+	le_configuracoes(&gs_configuracoes);
 
     //MESSAGE QUEUE
     if ((msg_q_id= msgget(IPC_PRIVATE,IPC_CREAT | 0700))==-1){
@@ -221,7 +101,7 @@ int main(void){
     //arranja o ficheiro de leitura do pipe
     if ((fd_pipe = open(PIPE_NAME, O_RDONLY, O_WRONLY)) < 0) { 
         perror("Erro ao ler o pipe");
-        exit(0);
+        exit(1);
     } 
 
     /*O gestor de simulacao vai receber
@@ -232,6 +112,7 @@ int main(void){
     essa informacao (sobre os voos) na 
     shared memory
     */
+    printf("1\n");
 	gestor_simulacao();
 
     //Apagar recursos

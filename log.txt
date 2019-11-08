@@ -1,3 +1,34 @@
 1 17 34 olaaaaa
 1 22 4 olaaaaa
 01:49:25 mensagem: olaaaaa
+03:26:31 mensagem: olaaaaa
+05:11:59 mensagem: olaaaaa
+17:21:39 mensagem: olaaaaa
+18:49:05 mensagem: Servidor iniciado, instante
+
+18:55:21 mensagem: Servidor iniciado, instante
+
+18:56:51 mensagem: Servidor iniciado, instante
+
+18:59:34 mensagem: Servidor iniciado
+
+19:01:14 mensagem: Servidor iniciado
+
+19:01:31 mensagem: Servidor iniciado
+
+19:03:24 mensagem: Servidor iniciado
+
+19:04:42 mensagem: Servidor iniciado
+
+19:25:18 mensagem: Servidor iniciado
+
+19:38:11 mensagem: Servidor iniciado
+
+19:41:06 mensagem: Servidor iniciado
+
+19:46:50 mensagem: Servidor iniciado
+
+19:51:13 mensagem: Servidor iniciado
+
+23:01:49 mensagem: Servidor iniciado
+
