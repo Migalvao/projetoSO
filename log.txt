@@ -1,0 +1,3 @@
+1 17 34 olaaaaa
+1 22 4 olaaaaa
+01:49:25 mensagem: olaaaaa

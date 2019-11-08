@@ -15,10 +15,13 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/msg.h>
+#include <time.h>
 
 #define STATS_SEMAPHORE "/stats_semaphore"
 #define SHARED_MEM_NAME "/gestor_simulacao"
-#define PIPE_NAME "/command_pipe"
+#define PIPE_NAME "command_pipe"
+#define MAX_SIZE_COMANDO 50
+#define SIZE_HORAS 9
 
 
 typedef struct system_stats
@@ -69,6 +72,20 @@ int * array_voos_partida;
 int * array_voos_chegada;
 configuracoes gs_configuracoes;
 estatisticas_sistema * estatisticas;
+char comando[MAX_SIZE_COMANDO];
+
+void write_log(char* mensagem){
+    FILE  *f =fopen("log.txt","a");
+    time_t tempo;
+    struct tm* estrutura_temp;
+    char horas[SIZE_HORAS];
+
+    time(&tempo);
+    estrutura_temp = localtime(&tempo);
+    strftime(horas,SIZE_HORAS,"%I:%M:%S", estrutura_temp);
+    fprintf(f,"%s mensagem: %s\n", horas, mensagem);
+    printf("%s mensagem: %s\n", horas, mensagem);
+}
 
 void le_configuracoes(configuracoes configs ){
     char linha[200];
@@ -137,6 +154,11 @@ void torre_controlo(){
 
 void gestor_simulacao(){
 	printf("Ola sou o gestor de simulacao. Pid = %d\n", getpid());
+
+    write_log("olaaaaa");
+
+    read(fd_pipe,comando,MAX_SIZE_COMANDO);
+    printf("pipe lido: %s\n",comando);
     /*
     para tentar alterar estatisticas
     sem_wait(sem_stats);
@@ -147,23 +169,14 @@ void gestor_simulacao(){
     */
     }
 
+
 int main(void){
 
 	le_configuracoes(gs_configuracoes);
 
-    //cria o pipe
-    if ((mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0) && (errno != EEXIST)){
-        printf("Erro ao criar o PIPE\n");
-    } else {
-        printf("->Named Pipe criado.\n");
-    }
-
     //MESSAGE QUEUE
     if ((msg_q_id= msgget(IPC_PRIVATE,IPC_CREAT | 0700))==-1){
         printf("ERRO ao criar message queue\n");
-    }else
-    {
-        printf("Message queue criada.\n");
     }
 
     //SHARED MEMORY
@@ -199,6 +212,18 @@ int main(void){
 		exit(0);
 	} 
 
+    //cria o pipe
+    if ((mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0) && (errno!= EEXIST)){
+        perror("Cannot create pipe");
+        exit(1);
+    } 
+
+    //arranja o ficheiro de leitura do pipe
+    if ((fd_pipe = open(PIPE_NAME, O_RDONLY, O_WRONLY)) < 0) { 
+        perror("Erro ao ler o pipe");
+        exit(0);
+    } 
+
     /*O gestor de simulacao vai receber
     comandos pelo pipe, le-los, criar
     as threads necessarias, por na 
@@ -211,5 +236,7 @@ int main(void){
 
     //Apagar recursos
     //shared memory, pipe, message queue, semaforos, etc
+    unlink(PIPE_NAME);
+    close(fd_pipe);
     exit(0);
 }
