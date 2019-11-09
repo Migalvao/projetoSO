@@ -75,3 +75,63 @@ void create_thread(int init, int ut){
     sleep(wait_time);
     return;
 }
+
+void validacao_pipe(char * comando){
+    char delimitador[]= " ";
+    char *token;
+    voo_chegada chegada;
+    voo_partida partida;
+    
+
+    token = strtok(comando, delimitador);
+
+
+
+    while(token!=NULL){
+        
+        if (strcmp(token,"DEPARTURE")==0){
+            token =strtok(NULL, delimitador);
+            strcpy(partida.flight_code, token);
+            printf("%s\n",partida.flight_code);
+            token = strtok(NULL, delimitador);
+            if (strcmp(token,"init:")==0){
+                token = strtok(NULL, delimitador);
+                partida.init=atoi(token);
+                printf("%d\n",partida.init);
+                token = strtok(NULL, delimitador);
+                if (strcmp(token,"takeoff:")==0){
+                    token = strtok(NULL, delimitador);
+                    partida.takeoff=atoi(token);
+                    printf("%d\n",partida.takeoff);
+                    token = strtok(NULL, delimitador);
+		}              
+            }
+        }
+
+        else if (strcmp(token,"ARRIVAL")==0){
+            token=strtok(NULL, delimitador);
+            strcpy(chegada.flight_code, token);
+            printf("%s\n", chegada.flight_code);
+            token= strtok(NULL,delimitador);
+            if(strcmp(token,"init:")==0){
+                token= strtok(NULL,delimitador);
+                chegada.init=atoi(token);
+                printf("%d\n", chegada.init);
+                token= strtok(NULL,delimitador);
+                if (strcmp(token,"eta:")==0){
+                    token=strtok(NULL, delimitador);
+                    chegada.eta=atoi(token);
+                    printf("%d\n", chegada.eta);
+                    token= strtok(NULL,delimitador);
+                    if (strcmp(token, "fuel:")==0){
+                        token=strtok(NULL, delimitador);
+                        chegada.fuel=atoi(token);
+                        printf("%d", chegada.fuel);
+                        token= strtok(NULL,delimitador);
+                    
+                    }
+                }
+            }
+        }   
+    }
+}

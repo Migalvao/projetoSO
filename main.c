@@ -14,6 +14,8 @@ char comando[MAX_SIZE_COMANDO];
 
 sem_t * sem_stats;      //semaforo para estatisticas
 
+voo_chegada* head_voos_chegada=NULL;
+voo_partida* head_voos_partida=NULL;
 
 void torre_controlo(){
 	printf("Ola sou a torre de controlo. Pid = %d\n", getpid());
@@ -33,10 +35,11 @@ void gestor_simulacao(){
     printf("3\n");
     write_log("Servidor iniciado\n");
     printf("4\n");
-    //create_thread(150, gs_configuracoes.unidade_tempo);
 
 
     read(fd_pipe,comando,MAX_SIZE_COMANDO);
+    validacao_pipe(comando);
+    create_thread(150, gs_configuracoes.unidade_tempo);
     printf("pipe lido: %s\n",comando);
     /*
     para tentar alterar estatisticas

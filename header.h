@@ -14,10 +14,11 @@
 #include <errno.h>
 #include <sys/msg.h>
 #include <time.h>
+#include <ctype.h>
 
 #define STATS_SEMAPHORE "/stats_semaphore"
 #define SHARED_MEM_NAME "/gestor_simulacao"
-#define PIPE_NAME "command_pipe"
+#define PIPE_NAME "input_pipe" 
 #define MAX_SIZE_COMANDO 50
 #define SIZE_HORAS 9
 
@@ -48,19 +49,23 @@ typedef struct config{
 } configuracoes;
 
 typedef struct arrival_flight{
-	char fligh_code[10];
+	char flight_code[10];
 	int init,
-		eta;
+		eta,
+        fuel;        
 } voo_chegada;
 
 typedef struct departure_flight{
-	char fligh_code[10];
+	char flight_code[10];
 	int init,
-		fuel;
+		takeoff;    
 } voo_partida;
+
 
 void write_log(char* mensagem);
 
 void le_configuracoes(configuracoes * configs);
 
 void create_thread(int init, int ut);
+
+void validacao_pipe(char* comando);

@@ -32,3 +32,5 @@
 
 23:01:49 mensagem: Servidor iniciado
 
+01:11:09 mensagem: Servidor iniciado
+
