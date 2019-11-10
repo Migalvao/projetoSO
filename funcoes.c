@@ -9,8 +9,8 @@ void write_log(char * mensagem){
     time(&tempo);
     estrutura_temp = localtime(&tempo);
     strftime(horas,SIZE_HORAS,"%H:%M:%S", estrutura_temp);
-    fprintf(f,"%s mensagem: %s\n", horas, mensagem);
-    printf("%s mensagem: %s\n", horas, mensagem);
+    fprintf(f,"%s %s\n", horas, mensagem);
+    printf("%s %s\n", horas, mensagem);
 
     fclose(f);
 }
@@ -68,23 +68,34 @@ void le_configuracoes(configuracoes * configs ){
     fclose (f);
 }
 
-void create_thread(int init, int ut){
-    time_t t_atual = clock()/CLOCKS_PER_SEC;
-    double wait_time = (double)((init * ut)/1000);
-    //printf("Vou esperar %f segundos para criar a thread\n", wait_time);
-    sleep(wait_time);
-    return;
+void * criar_thread(void * t){
+    time_t t_atual = (time(NULL) - t_inicial) * 1000;    
+    long init = (long)*((int *)t);   //em milissegundos
+    long wait_time = (init * gs_configuracoes.unidade_tempo) - t_atual;        //em milissegundos
+    printf("Vou esperar %ld segundos para criar a thread\n", wait_time/1000);
+
+    usleep(wait_time * 1000);
+    //pthread_create()
+    printf("Thread criada\n");
+    pthread_exit(NULL);
 }
 
-void validacao_pipe(char * comando){
+int validacao_pipe(char * comando, int * init){
     char delimitador[]= " ";
     char *token;
+    char copia_comando[MAX_SIZE_COMANDO];
+    time_t t_atual = (time(NULL) - t_inicial) * 1000;  
     voo_chegada chegada;
     voo_partida partida;
     
-
-    token = strtok(comando, delimitador);
-
+    strcpy(copia_comando, comando);
+    token = strtok(copia_comando, delimitador);
+    /*
+    Vamos ter de criar uma versao diferente desta funçao. Para validar mesmo so o comando so
+    precisamos mesmo de partir as coisas(sem as guardar) e ficar com o init.
+    Depois, para guardar as informaçoes ai ja vamos precisar de guardar as coisas numa estrutura
+    Vamos fazer isso dando o ponteiŕo da estrutura para guardar
+    */
 
 
     while(token!=NULL){
@@ -92,46 +103,55 @@ void validacao_pipe(char * comando){
         if (strcmp(token,"DEPARTURE")==0){
             token =strtok(NULL, delimitador);
             strcpy(partida.flight_code, token);
-            printf("%s\n",partida.flight_code);
+            //printf("%s\n",partida.flight_code);
             token = strtok(NULL, delimitador);
             if (strcmp(token,"init:")==0){
                 token = strtok(NULL, delimitador);
                 partida.init=atoi(token);
-                printf("%d\n",partida.init);
+                if ((partida.init * gs_configuracoes.unidade_tempo) <= t_atual)
+                    return 1;
+                (*init)=partida.init;
+                //printf("%d\n",partida.init);
                 token = strtok(NULL, delimitador);
                 if (strcmp(token,"takeoff:")==0){
                     token = strtok(NULL, delimitador);
                     partida.takeoff=atoi(token);
-                    printf("%d\n",partida.takeoff);
+                    //printf("%d\n",partida.takeoff);
                     token = strtok(NULL, delimitador);
-		}              
+                    return 0;
+		        }              
             }
         }
 
         else if (strcmp(token,"ARRIVAL")==0){
             token=strtok(NULL, delimitador);
             strcpy(chegada.flight_code, token);
-            printf("%s\n", chegada.flight_code);
+            //printf("%s\n", chegada.flight_code);
             token= strtok(NULL,delimitador);
             if(strcmp(token,"init:")==0){
                 token= strtok(NULL,delimitador);
                 chegada.init=atoi(token);
-                printf("%d\n", chegada.init);
+                if ((chegada.init * gs_configuracoes.unidade_tempo) <= t_atual)
+                    return 1;
+                (*init)=atoi(token);
+                //printf("%d\n", chegada.init);
                 token= strtok(NULL,delimitador);
                 if (strcmp(token,"eta:")==0){
                     token=strtok(NULL, delimitador);
                     chegada.eta=atoi(token);
-                    printf("%d\n", chegada.eta);
+                    //printf("%d\n", chegada.eta);
                     token= strtok(NULL,delimitador);
                     if (strcmp(token, "fuel:")==0){
                         token=strtok(NULL, delimitador);
                         chegada.fuel=atoi(token);
-                        printf("%d", chegada.fuel);
+                        //printf("%d\n", chegada.fuel);
                         token= strtok(NULL,delimitador);
+                        return 0;
                     
                     }
                 }
             }
         }   
+    return 1;
     }
 }

@@ -34,3 +34,154 @@
 
 01:11:09 mensagem: Servidor iniciado
 
+17:01:10 mensagem: Servidor iniciado
+
+17:04:26 mensagem: Servidor iniciado
+
+17:10:32 mensagem: Servidor iniciado
+
+17:10:48 mensagem: Servidor iniciado
+
+17:22:59 mensagem: Servidor iniciado
+
+17:24:05 mensagem: Servidor iniciado
+
+17:26:10 mensagem: Servidor iniciado
+
+17:26:43 mensagem: Servidor iniciado
+
+17:32:56 mensagem: Servidor iniciado
+
+17:37:12 mensagem: Servidor iniciado
+
+17:37:42 mensagem: Servidor iniciado
+
+17:38:14 mensagem: Servidor iniciado
+
+17:40:48 mensagem: Servidor iniciado
+
+17:52:48 mensagem: Servidor iniciado
+
+18:04:37 mensagem: Servidor iniciado
+
+18:12:01 mensagem: Servidor iniciado
+
+18:34:49 Servidor iniciado
+
+18:34:58 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+
+18:37:46 Servidor iniciado
+
+18:39:55 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+
+19:30:25 Servidor iniciado
+19:30:40 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+19:32:34 Servidor iniciado
+19:32:58 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+19:33:43 Servidor iniciado
+19:33:56 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+21:53:46 Servidor iniciado
+21:53:56 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+21:55:54 Servidor iniciado
+21:58:10 Servidor iniciado
+21:58:13 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+22:00:00 Servidor iniciado
+22:00:08 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+22:16:16 Servidor iniciado
+22:16:21 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+22:17:08 Servidor iniciado
+22:17:19 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+
+22:19:01 Servidor iniciado
+22:23:48 Servidor iniciado
+22:23:51 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:30:37 Servidor iniciado
+22:32:30 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:33:24 Servidor iniciado
+22:33:37 Servidor iniciado
+22:33:51 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:39:21 Servidor iniciado
+22:39:25 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:43:25 Servidor iniciado
+22:43:29 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:47:46 Servidor iniciado
+22:48:02 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:48:37 Servidor iniciado
+22:48:40 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:53:44 Servidor iniciado
+22:53:48 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:55:50 Servidor iniciado
+22:56:03 Servidor iniciado
+22:56:06 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+22:57:44 Servidor iniciado
+22:57:46 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+23:00:53 Servidor iniciado
+23:00:57 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+23:02:05 Servidor iniciado
+23:06:20 Servidor iniciado
+23:06:24 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+23:20:04 Servidor iniciado
+23:20:11 Servidor iniciado
+23:20:15 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+23:22:41 Servidor iniciado
+23:22:43 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+23:24:05 Servidor iniciado
+23:24:07 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+23:33:30 Servidor iniciado
+23:33:33 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+23:35:05 Servidor iniciado
+23:35:10 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+00:27:31 Servidor iniciado
+00:27:41 WRONG COMMAND => ARRIVAL TP437 init: 0 eta: 100 fuel: 1000
+
+00:27:52 Servidor iniciado
+00:28:00 WRONG COMMAND => ARRIVAL TP437 init: 10 eta: 100 fuel: 1000
+
+00:28:07 Servidor iniciado
+00:28:09 NEW COMMAND => ARRIVAL TP437 init: 10 eta: 100 fuel: 1000
+
+00:28:49 Servidor iniciado
+00:28:54 WRONG COMMAND => ARRIVAL TP437 init: 10 eta: 100 fuel: 1000
+
+00:34:22 Servidor iniciado
+00:34:36 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+01:00:53 Servidor iniciado
+01:00:56 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+01:08:20 Servidor iniciado
+01:08:29 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+
+01:10:25 Servidor iniciado
+01:10:28 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+
+01:11:18 Servidor iniciado
+01:11:32 Servidor iniciado
+01:11:36 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+

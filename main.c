@@ -7,18 +7,15 @@ int shmid;      //SHARED MEMORY
 int * array_voos_partida;
 int * array_voos_chegada;
 
-configuracoes gs_configuracoes;
 estatisticas_sistema * estatisticas;
 
 char comando[MAX_SIZE_COMANDO];
+char mensagem[MAX_SIZE_MSG];
 
 sem_t * sem_stats;      //semaforo para estatisticas
 
-voo_chegada* head_voos_chegada=NULL;
-voo_partida* head_voos_partida=NULL;
-
 void torre_controlo(){
-	printf("Ola sou a torre de controlo. Pid = %d\n", getpid());
+	//printf("Ola sou a torre de controlo. Pid = %d\n", getpid());
     /*
     para tentar alterar estatisticas
     sem_wait(sem_stats);
@@ -30,17 +27,25 @@ void torre_controlo(){
 }
 
 void gestor_simulacao(){
-    printf("2\n");
-    clock_t t_inicial = clock() / CLOCKS_PER_SEC;
-    printf("3\n");
-    write_log("Servidor iniciado\n");
-    printf("4\n");
-
+    pthread_t thread_intermedia;
+    int init;
+    time(&t_inicial);   //definir o tempo inicial, declarado em header.h
+    write_log("Servidor iniciado");
 
     read(fd_pipe,comando,MAX_SIZE_COMANDO);
-    validacao_pipe(comando);
-    create_thread(150, gs_configuracoes.unidade_tempo);
-    printf("pipe lido: %s\n",comando);
+    if(validacao_pipe(comando, &init) == 0){
+        sprintf(mensagem, "NEW COMMAND => %s",comando);
+        write_log(mensagem);
+        if(pthread_create(&thread_intermedia, NULL, criar_thread, &init) !=0){
+            printf("Erro a criar thread\n");
+        }
+
+    }
+    else{
+        sprintf(mensagem, "WRONG COMMAND => %s",comando);
+        write_log(mensagem);
+    }
+    pthread_join(thread_intermedia, NULL);
     /*
     para tentar alterar estatisticas
     sem_wait(sem_stats);
@@ -49,12 +54,10 @@ void gestor_simulacao(){
     
     sem_post(sem_stats);
     */
-    wait(NULL);
     }
 
 
 int main(void){
-
 	le_configuracoes(&gs_configuracoes);
 
     //MESSAGE QUEUE
@@ -100,10 +103,10 @@ int main(void){
         perror("Cannot create pipe");
         exit(1);
     } 
-
-    //arranja o ficheiro de leitura do pipe
-    if ((fd_pipe = open(PIPE_NAME, O_RDONLY, O_WRONLY)) < 0) { 
-        perror("Erro ao ler o pipe");
+    
+    //abrir o pipe para leitura
+    if ((fd_pipe = open(PIPE_NAME, 0666)) < 0) { 
+        perror("Erro a abrir o pipe para leitura");
         exit(1);
     } 
 
@@ -115,8 +118,9 @@ int main(void){
     essa informacao (sobre os voos) na 
     shared memory
     */
-    printf("1\n");
 	gestor_simulacao();
+
+    wait(NULL);
 
     //Apagar recursos
     //shared memory, pipe, message queue, semaforos, etc

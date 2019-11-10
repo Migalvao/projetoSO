@@ -15,11 +15,13 @@
 #include <sys/msg.h>
 #include <time.h>
 #include <ctype.h>
+#include <pthread.h>
 
 #define STATS_SEMAPHORE "/stats_semaphore"
 #define SHARED_MEM_NAME "/gestor_simulacao"
 #define PIPE_NAME "input_pipe" 
 #define MAX_SIZE_COMANDO 50
+#define MAX_SIZE_MSG 80
 #define SIZE_HORAS 9
 
 
@@ -61,11 +63,24 @@ typedef struct departure_flight{
 		takeoff;    
 } voo_partida;
 
+typedef struct thread_no * thread;
 
+typedef struct thread_no
+{
+    thread next;
+    pthread_t thread_id;
+} thread_node;
+
+//variaveis globais
+configuracoes gs_configuracoes;
+//thread thread_list = NULL;
+time_t t_inicial;
+
+//Funcoes
 void write_log(char* mensagem);
 
 void le_configuracoes(configuracoes * configs);
 
-void create_thread(int init, int ut);
+void * criar_thread(void * init);
 
-void validacao_pipe(char* comando);
+int validacao_pipe(char* comando, int * init);
