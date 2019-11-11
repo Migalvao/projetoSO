@@ -85,6 +85,8 @@ sem_t * sem_log;                //semaforo para o log
 char mensagem[MAX_SIZE_MSG];
 
 //Funcoes
+int verifica_numero(char * nmr);
+
 void write_log(char* mensagem);
 
 void le_configuracoes(configuracoes * configs);

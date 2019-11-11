@@ -10,56 +10,6 @@
 
 18:56:51 mensagem: Servidor iniciado, instante
 
-18:59:34 mensagem: Servidor iniciado
-
-19:01:14 mensagem: Servidor iniciado
-
-19:01:31 mensagem: Servidor iniciado
-
-19:03:24 mensagem: Servidor iniciado
-
-19:04:42 mensagem: Servidor iniciado
-
-19:25:18 mensagem: Servidor iniciado
-
-19:38:11 mensagem: Servidor iniciado
-
-19:41:06 mensagem: Servidor iniciado
-
-19:46:50 mensagem: Servidor iniciado
-
-19:51:13 mensagem: Servidor iniciado
-
-23:01:49 mensagem: Servidor iniciado
-
-01:11:09 mensagem: Servidor iniciado
-
-17:01:10 mensagem: Servidor iniciado
-
-17:04:26 mensagem: Servidor iniciado
-
-17:10:32 mensagem: Servidor iniciado
-
-17:10:48 mensagem: Servidor iniciado
-
-17:22:59 mensagem: Servidor iniciado
-
-17:24:05 mensagem: Servidor iniciado
-
-17:26:10 mensagem: Servidor iniciado
-
-17:26:43 mensagem: Servidor iniciado
-
-17:32:56 mensagem: Servidor iniciado
-
-17:37:12 mensagem: Servidor iniciado
-
-17:37:42 mensagem: Servidor iniciado
-
-17:38:14 mensagem: Servidor iniciado
-
-17:40:48 mensagem: Servidor iniciado
-
 17:52:48 mensagem: Servidor iniciado
 
 18:04:37 mensagem: Servidor iniciado
@@ -414,3 +364,20 @@ AL TP437 init: 100 eta: 100 fuel: 10
 12:44:53 NEW COMMAND => DEPARTURE TP89 init: 80 takeoff: 100
 12:45:05 Sou o voo TP89 criado no instante 80 ut e quero partir no instante 100
 12:45:22 Servidor terminado
+16:43:52 Torre de controlo iniciada. Pid: 3007
+16:43:52 Gestor de simulação iniciado. Pid: 3006
+16:44:29 Servidor terminado
+16:45:17 Gestor de simulação iniciado. Pid: 3036
+16:45:17 Torre de controlo iniciada. Pid: 3037
+16:45:19 NEW COMMAND => DEPARTURE TP440 init: 50 takeoff: 100
+16:45:24 NEW COMMAND => DEPARTURE TP440 init: 60 takeoff: 100
+16:45:32 WRONG COMMAND => DEPARTURE TP440 init: sdfg takeoff: 100
+16:45:40 WRONG COMMAND => DEPARTURE TP440 init: 60 takeoff: ygh
+16:45:42 Sou o voo TP440 criado no instante 50 ut,takeoff = 100
+16:45:47 Sou o voo TP440 criado no instante 60 ut,takeoff = 100
+16:45:50 WRONG COMMAND => jbfiyeabfr
+16:46:57 NEW COMMAND => ARRIVAL TP88 init: 1120 eta: 200 fuel: 1500
+16:47:06 WRONG COMMAND => ARRIVAL TP88 init: AAA eta: 200 fuel: 1500
+16:47:12 WRONG COMMAND => ARRIVAL TP88 init: 1120 eta: 200 fuel: ihgvi
+16:47:22 WRONG COMMAND => ARRIVAL TP88 init: AAA eta: ihgi fuel: 1500
+16:47:34 Servidor terminado

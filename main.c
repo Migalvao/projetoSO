@@ -48,17 +48,8 @@ void gestor_simulacao(){
             write_log(mensagem);
             sem_post(sem_log);
         }
-        
     }   
-    /*
-    para tentar alterar estatisticas
-    sem_wait(sem_stats);
-
-    estatisticas->qualquercoisa
-    
-    sem_post(sem_stats);
-    */
-    }
+}
 
 int main(void){
 	le_configuracoes(&gs_configuracoes);

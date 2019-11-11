@@ -1,5 +1,17 @@
 #include "header.h"
 
+int verifica_numero(char * nmr){
+    char * digito = nmr;
+    while((*digito) != '\0'){
+        if((*digito) < '0' || (*digito) > '9'){
+            return 1;
+        } 
+        else 
+            digito ++;
+    }
+    return 0;
+}
+
 void write_log(char * mensagem){
     FILE  *f =fopen("log.txt","a");
     time_t tempo;
@@ -72,7 +84,7 @@ void * partida(void * t){
     time_t t_atual = (time(NULL) - t_inicial) * 1000;
     voo_partida * dados_partida = (voo_partida *)t;
     sem_wait(sem_log);
-    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut e quero partir no instante %d", dados_partida->flight_code, t_atual/gs_configuracoes.unidade_tempo, dados_partida->takeoff);
+    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut,takeoff = %d", dados_partida->flight_code, t_atual/gs_configuracoes.unidade_tempo, dados_partida->takeoff);
     write_log(mensagem);
     sem_post(sem_log);
     free(dados_partida);
@@ -138,6 +150,8 @@ int validacao_pipe(char * comando){
             token = strtok(NULL, delimitador);
             if (strcmp(token,"init:")==0){
                 token = strtok(NULL, delimitador);
+                if(verifica_numero(token) == 1)
+                    return 1;
                 partida.init=atoi(token);
                 if ((partida.init * gs_configuracoes.unidade_tempo) <= t_atual)
                     return 1;
@@ -145,6 +159,8 @@ int validacao_pipe(char * comando){
                 token = strtok(NULL, delimitador);
                 if (strcmp(token,"takeoff:")==0){
                     token = strtok(NULL, delimitador);
+                    if(verifica_numero(token) == 1)
+                        return 1;
                     partida.takeoff=atoi(token);
                     if(partida.takeoff < partida.init)
                         return 1;
@@ -169,6 +185,8 @@ int validacao_pipe(char * comando){
             token= strtok(NULL,delimitador);
             if(strcmp(token,"init:")==0){
                 token= strtok(NULL,delimitador);
+                if(verifica_numero(token) == 1)
+                    return 1;
                 chegada.init=atoi(token);
                 if ((chegada.init * gs_configuracoes.unidade_tempo) <= t_atual)
                     return 1;
@@ -176,11 +194,15 @@ int validacao_pipe(char * comando){
                 token= strtok(NULL,delimitador);
                 if (strcmp(token,"eta:")==0){
                     token=strtok(NULL, delimitador);
+                    if(verifica_numero(token) == 1)
+                        return 1;
                     chegada.eta=atoi(token);
                     //printf("%d\n", chegada.eta);
                     token= strtok(NULL,delimitador);
                     if (strcmp(token, "fuel:")==0){
                         token=strtok(NULL, delimitador);
+                        if(verifica_numero(token) == 1)
+                            return 1;
                         chegada.fuel=atoi(token);
                         if(chegada.fuel < chegada.eta)
                             return 1;
