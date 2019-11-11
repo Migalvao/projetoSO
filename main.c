@@ -19,8 +19,6 @@ void torre_controlo(){
 }
 
 void gestor_simulacao(){
-    pthread_t thread_intermedia;
-    int init;
     char * command;
     time(&t_inicial);   //definir o tempo inicial, declarado em header.h
     sem_wait(sem_log);
@@ -31,15 +29,18 @@ void gestor_simulacao(){
     while(1){
         read(fd_pipe,comando,MAX_SIZE_COMANDO);
         command = strtok(comando, "\n");
-        if(strcmp(command, "exit") == 0)
+        if(strcmp(command, "exit") == 0){
+            sem_wait(sem_log);
+            sprintf(mensagem, "Servidor terminado");
+            write_log(mensagem);
+            sem_post(sem_log);
             break;
-        if(validacao_pipe(command, &init) == 0){
+        }
+        if(validacao_pipe(command) == 0){
             sem_wait(sem_log);
             sprintf(mensagem, "NEW COMMAND => %s",command);
             write_log(mensagem);
             sem_post(sem_log);
-            pthread_create(&thread_intermedia, NULL, criar_thread, &init);
-
         }
         else{
             sem_wait(sem_log);

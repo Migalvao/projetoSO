@@ -68,43 +68,66 @@ void le_configuracoes(configuracoes * configs ){
     fclose (f);
 }
 
-void * voo(){
+void * partida(void * t){
     time_t t_atual = (time(NULL) - t_inicial) * 1000;
+    voo_partida * dados_partida = (voo_partida *)t;
     sem_wait(sem_log);
-    sprintf(mensagem, "Voo criado no instante %ld ut", t_atual/gs_configuracoes.unidade_tempo);
+    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut e quero partir no instante %d", dados_partida->flight_code, t_atual/gs_configuracoes.unidade_tempo, dados_partida->takeoff);
     write_log(mensagem);
     sem_post(sem_log);
+    free(dados_partida);
     pthread_exit(NULL);
 }
 
-void * criar_thread(void * t){
+void * criar_partida(void * t){
     pthread_t thread_voo;
     time_t t_atual = (time(NULL) - t_inicial) * 1000;    
-    long init = (long)*((int *)t);   //em milissegundos
-    long wait_time = (init * gs_configuracoes.unidade_tempo) - t_atual;        //em milissegundos
+    //long init = (long)*((int *)t);   //em milissegundos
+    voo_partida * dados_partida = (voo_partida *)t;
+    long wait_time = (dados_partida->init * gs_configuracoes.unidade_tempo) - t_atual;        //em milissegundos
     printf("Vou esperar %ld segundos para gerar o voo\n", wait_time/1000);
     usleep(wait_time * 1000);   //microssegundos
-    pthread_create(&thread_voo, NULL, voo,NULL);
+    pthread_create(&thread_voo, NULL, partida,dados_partida);
     pthread_exit(NULL);
 }
 
-int validacao_pipe(char * comando, int * init){
+void * chegada(void * t){
+    time_t t_atual = (time(NULL) - t_inicial) * 1000;
+    voo_chegada * dados_chegada = (voo_chegada *)t;
+    sem_wait(sem_log);
+    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut, eta = %d ut,fuel = %d", dados_chegada->flight_code, t_atual/gs_configuracoes.unidade_tempo, dados_chegada->eta, dados_chegada->fuel);
+    write_log(mensagem);
+    sem_post(sem_log);   
+    free(dados_chegada);
+    pthread_exit(NULL);
+}
+
+void * criar_chegada(void * t){
+    pthread_t thread_voo;
+    time_t t_atual = (time(NULL) - t_inicial) * 1000;    
+    //long init = (long)*((int *)t);   //em milissegundos
+    voo_chegada * dados_chegada = (voo_chegada *)t;
+    long wait_time = (dados_chegada->init * gs_configuracoes.unidade_tempo) - t_atual;        //em milissegundos
+    printf("Vou esperar %ld segundos para gerar o voo\n", wait_time/1000);
+    usleep(wait_time * 1000);   //microssegundos
+    pthread_create(&thread_voo, NULL, chegada,dados_chegada);
+    pthread_exit(NULL);
+}
+
+int validacao_pipe(char * comando){
+    pthread_t thread_intermedia;
     char delimitador[]= " ";
     char *token;
     char copia_comando[MAX_SIZE_COMANDO];
     time_t t_atual = (time(NULL) - t_inicial) * 1000;  
     voo_chegada chegada;
+    voo_chegada * dados_chegada;
     voo_partida partida;
+    voo_partida * dados_partida;
+
     
     strcpy(copia_comando, comando);
     token = strtok(copia_comando, delimitador);
-    /*
-    Vamos ter de criar uma versao diferente desta funçao. Para validar mesmo so o comando so
-    precisamos mesmo de partir as coisas(sem as guardar) e ficar com o init.
-    Depois, para guardar as informaçoes ai ja vamos precisar de guardar as coisas numa estrutura
-    Vamos fazer isso dando o ponteiŕo da estrutura para guardar
-    */
-
 
     while(token!=NULL){
         
@@ -118,7 +141,6 @@ int validacao_pipe(char * comando, int * init){
                 partida.init=atoi(token);
                 if ((partida.init * gs_configuracoes.unidade_tempo) <= t_atual)
                     return 1;
-                (*init)=partida.init;
                 //printf("%d\n",partida.init);
                 token = strtok(NULL, delimitador);
                 if (strcmp(token,"takeoff:")==0){
@@ -128,7 +150,14 @@ int validacao_pipe(char * comando, int * init){
                         return 1;
                     //printf("%d\n",partida.takeoff);
                     token = strtok(NULL, delimitador);
-                    return 0;
+                    if(token == NULL){
+                        dados_partida = (voo_partida *)malloc(sizeof(voo_partida));
+                        strcpy(dados_partida->flight_code, partida.flight_code);
+                        dados_partida->init = partida.init;
+                        dados_partida->takeoff = partida.takeoff;
+                        pthread_create(&thread_intermedia, NULL, criar_partida, dados_partida);
+                        return 0;
+                    }
 		        }              
             }
         }
@@ -143,7 +172,6 @@ int validacao_pipe(char * comando, int * init){
                 chegada.init=atoi(token);
                 if ((chegada.init * gs_configuracoes.unidade_tempo) <= t_atual)
                     return 1;
-                (*init)=atoi(token);
                 //printf("%d\n", chegada.init);
                 token= strtok(NULL,delimitador);
                 if (strcmp(token,"eta:")==0){
@@ -158,8 +186,15 @@ int validacao_pipe(char * comando, int * init){
                             return 1;
                         //printf("%d\n", chegada.fuel);
                         token= strtok(NULL,delimitador);
-                        return 0;
-                    
+                        if(token == NULL){
+                            dados_chegada = (voo_chegada *)malloc(sizeof(voo_chegada));
+                            strcpy(dados_chegada->flight_code, chegada.flight_code);
+                            dados_chegada->init = chegada.init;
+                            dados_chegada->eta = chegada.eta;
+                            dados_chegada->fuel = chegada.fuel;
+                            pthread_create(&thread_intermedia, NULL, criar_chegada, dados_chegada);
+                            return 0;
+                        }
                     }
                 }
             }

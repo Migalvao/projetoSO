@@ -91,6 +91,12 @@ void le_configuracoes(configuracoes * configs);
 
 void * criar_thread(void * init);
 
-int validacao_pipe(char* comando, int * init);
+int validacao_pipe(char * comando);
 
-void * voo();
+void * partida(void * t);
+
+void * criar_partida(void * t);
+
+void * chegada(void * t);
+
+void * criar_chegada(void * t);
