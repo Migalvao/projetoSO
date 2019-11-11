@@ -68,15 +68,23 @@ void le_configuracoes(configuracoes * configs ){
     fclose (f);
 }
 
+void * voo(){
+    time_t t_atual = (time(NULL) - t_inicial) * 1000;
+    sem_wait(sem_log);
+    sprintf(mensagem, "Voo criado no instante %ld ut", t_atual/gs_configuracoes.unidade_tempo);
+    write_log(mensagem);
+    sem_post(sem_log);
+    pthread_exit(NULL);
+}
+
 void * criar_thread(void * t){
+    pthread_t thread_voo;
     time_t t_atual = (time(NULL) - t_inicial) * 1000;    
     long init = (long)*((int *)t);   //em milissegundos
     long wait_time = (init * gs_configuracoes.unidade_tempo) - t_atual;        //em milissegundos
-    printf("Vou esperar %ld segundos para criar a thread\n", wait_time/1000);
-
-    usleep(wait_time * 1000);
-    //pthread_create()
-    printf("Thread criada\n");
+    printf("Vou esperar %ld segundos para gerar o voo\n", wait_time/1000);
+    usleep(wait_time * 1000);   //microssegundos
+    pthread_create(&thread_voo, NULL, voo,NULL);
     pthread_exit(NULL);
 }
 
@@ -116,6 +124,8 @@ int validacao_pipe(char * comando, int * init){
                 if (strcmp(token,"takeoff:")==0){
                     token = strtok(NULL, delimitador);
                     partida.takeoff=atoi(token);
+                    if(partida.takeoff < partida.init)
+                        return 1;
                     //printf("%d\n",partida.takeoff);
                     token = strtok(NULL, delimitador);
                     return 0;
@@ -144,6 +154,8 @@ int validacao_pipe(char * comando, int * init){
                     if (strcmp(token, "fuel:")==0){
                         token=strtok(NULL, delimitador);
                         chegada.fuel=atoi(token);
+                        if(chegada.fuel < chegada.eta)
+                            return 1;
                         //printf("%d\n", chegada.fuel);
                         token= strtok(NULL,delimitador);
                         return 0;

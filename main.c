@@ -10,42 +10,45 @@ int * array_voos_chegada;
 estatisticas_sistema * estatisticas;
 
 char comando[MAX_SIZE_COMANDO];
-char mensagem[MAX_SIZE_MSG];
-
-sem_t * sem_stats;      //semaforo para estatisticas
 
 void torre_controlo(){
-	//printf("Ola sou a torre de controlo. Pid = %d\n", getpid());
-    /*
-    para tentar alterar estatisticas
-    sem_wait(sem_stats);
-
-    estatisticas->qualquercoisa
-
-    sem_post(sem_stats);
-    */
+    sem_wait(sem_log);
+    sprintf(mensagem, "Torre de controlo iniciada. Pid: %d", getpid());
+    write_log(mensagem);
+    sem_post(sem_log);
 }
 
 void gestor_simulacao(){
     pthread_t thread_intermedia;
     int init;
+    char * command;
     time(&t_inicial);   //definir o tempo inicial, declarado em header.h
-    write_log("Servidor iniciado");
+    sem_wait(sem_log);
+    sprintf(mensagem, "Gestor de simulação iniciado. Pid: %d",getpid());
+    write_log(mensagem);
+    sem_post(sem_log);
 
-    read(fd_pipe,comando,MAX_SIZE_COMANDO);
-    if(validacao_pipe(comando, &init) == 0){
-        sprintf(mensagem, "NEW COMMAND => %s",comando);
-        write_log(mensagem);
-        if(pthread_create(&thread_intermedia, NULL, criar_thread, &init) !=0){
-            printf("Erro a criar thread\n");
+    while(1){
+        read(fd_pipe,comando,MAX_SIZE_COMANDO);
+        command = strtok(comando, "\n");
+        if(strcmp(command, "exit") == 0)
+            break;
+        if(validacao_pipe(command, &init) == 0){
+            sem_wait(sem_log);
+            sprintf(mensagem, "NEW COMMAND => %s",command);
+            write_log(mensagem);
+            sem_post(sem_log);
+            pthread_create(&thread_intermedia, NULL, criar_thread, &init);
+
         }
-
-    }
-    else{
-        sprintf(mensagem, "WRONG COMMAND => %s",comando);
-        write_log(mensagem);
-    }
-    pthread_join(thread_intermedia, NULL);
+        else{
+            sem_wait(sem_log);
+            sprintf(mensagem, "WRONG COMMAND => %s",command);
+            write_log(mensagem);
+            sem_post(sem_log);
+        }
+        
+    }   
     /*
     para tentar alterar estatisticas
     sem_wait(sem_stats);
@@ -55,7 +58,6 @@ void gestor_simulacao(){
     sem_post(sem_stats);
     */
     }
-
 
 int main(void){
 	le_configuracoes(&gs_configuracoes);
@@ -85,7 +87,22 @@ int main(void){
     //size = gs_configuracoes.qnt_max_chegadas
 
     //SEMAFOROS
-    if((sem_stats = sem_open(STATS_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
+    if((sem_estatisticas = sem_open(STATS_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((sem_partidas = sem_open(DEPARTURES_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((sem_chegadas = sem_open(ARRIVALS_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((sem_log = sem_open(LOG_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
         printf("Error starting semaphore\n");
         exit(1);
     }
@@ -124,6 +141,14 @@ int main(void){
 
     //Apagar recursos
     //shared memory, pipe, message queue, semaforos, etc
+    sem_unlink(LOG_SEMAPHORE);
+    sem_close(sem_log);
+    sem_unlink(ARRIVALS_SEMAPHORE);
+    sem_close(sem_chegadas);
+    sem_unlink(DEPARTURES_SEMAPHORE);
+    sem_close(sem_partidas);
+    sem_unlink(STATS_SEMAPHORE);
+    sem_close(sem_estatisticas);
     unlink(PIPE_NAME);
     close(fd_pipe);
     exit(0);

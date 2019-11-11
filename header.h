@@ -18,6 +18,9 @@
 #include <pthread.h>
 
 #define STATS_SEMAPHORE "/stats_semaphore"
+#define LOG_SEMAPHORE "/log_semaphore"
+#define ARRIVALS_SEMAPHORE "/arrivals_semaphore"
+#define DEPARTURES_SEMAPHORE "/departures_semaphore"
 #define SHARED_MEM_NAME "/gestor_simulacao"
 #define PIPE_NAME "input_pipe" 
 #define MAX_SIZE_COMANDO 50
@@ -75,6 +78,11 @@ typedef struct thread_no
 configuracoes gs_configuracoes;
 //thread thread_list = NULL;
 time_t t_inicial;
+sem_t * sem_estatisticas;       //semaforo para estatisticas
+sem_t * sem_chegadas;           //semaforo para chegadas
+sem_t * sem_partidas;           //semaforo para partidas          
+sem_t * sem_log;                //semaforo para o log
+char mensagem[MAX_SIZE_MSG];
 
 //Funcoes
 void write_log(char* mensagem);
@@ -84,3 +92,5 @@ void le_configuracoes(configuracoes * configs);
 void * criar_thread(void * init);
 
 int validacao_pipe(char* comando, int * init);
+
+void * voo();

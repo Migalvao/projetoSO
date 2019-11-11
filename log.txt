@@ -185,3 +185,185 @@
 01:11:32 Servidor iniciado
 01:11:36 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
 
+23:06:58 Servidor iniciado
+23:07:03 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+
+23:07:57 Servidor iniciado
+23:07:59 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+
+23:10:50 Servidor iniciado
+23:10:54 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+
+23:13:26 Servidor iniciado
+23:13:29 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+
+23:13:41 NEW COMMAND => ARRIVAL TP437 init: 40 eta: 100 fuel: 1000
+
+23:14:17 Servidor iniciado
+23:14:19 NEW COMMAND => ARRIVAL TP437 init: 40 eta: 100 fuel: 1000
+
+23:14:28 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+
+23:14:37 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+
+23:14:45 NEW COMMAND => ARRIVAL TP437 init: 70 eta: 100 fuel: 1000
+
+23:14:50 NEW COMMAND => ARRIVAL TP437 init: 80 eta: 100 fuel: 1000
+
+23:27:12 Servidor iniciado
+23:27:32 WRONG COMMAND => ARRIVAL TP437 init: 80 eta: 1000 fuel: 900
+
+23:27:53 WRONG COMMAND => ARRIVAL TP437 init: AAA eta: 1000 fuel: 1200
+
+23:28:08 WRONG COMMAND => ARRIVAL TP437 init: AAA eta: 1000 fuel: 1200
+
+23:28:16 WRONG COMMAND => ARRIVAL TPA eta: 1000 fuel: 1200
+ fuel: 1200
+
+23:28:32 WRONG COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+0
+
+23:28:40 WRONG COMMAND => ARRIVAL TP437 init: 120 eta: 100 fuel: 1000
+
+
+23:28:46 NEW COMMAND => ARRIVAL TP437 init: 200 eta: 100 fuel: 1000
+
+
+00:24:47 Torre de controlo iniciada. Pid: 8396
+
+00:24:47 Gestor de simulação iniciado. Pid: 8395
+00:24:56 NEW COMMAND => ARRIVAL TP437 init: 200 eta: 100 fuel: 1000
+
+00:25:04 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+
+
+00:25:16 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+00:25:21 WRONG COMMAND => ARRIVAL TP437 init:800 eta: 100 fuel: 1000
+
+
+00:25:28 WRONG COMMAND => ARRIVAL TP437 init: 80 eta: 100 fuel: 1000
+
+
+00:25:36 NEW COMMAND => ARRIVAL TP437 init: 110 eta: 100 fuel: 1000
+
+00:39:03 Gestor de simulação iniciado. Pid: 8563
+00:39:03 Torre de controlo iniciada. Pid: 8564
+01:00:48 Gestor de simulação iniciado. Pid: 1354
+01:00:48 Torre de controlo iniciada. Pid: 1355
+01:04:21 Gestor de simulação iniciado. Pid: 1244
+01:04:21 Torre de controlo iniciada. Pid: 1245
+01:04:54 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+01:05:00 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+01:05:09 NEW COMMAND => ARRIVAL TP437 init: 120 eta: 100 fuel: 1000
+
+01:05:11 Voo criado no instante 100 ut
+
+01:05:11 Voo criado no instante 100 ut
+
+01:05:21 Voo criado no instante 120 ut
+
+01:09:19 Gestor de simulação iniciado. Pid: 1256
+01:09:19 Torre de controlo iniciada. Pid: 1257
+01:09:38 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+01:09:49 NEW COMMAND => ARRIVAL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:09:59 Voo criado no instante 80 ut
+
+01:10:09 Voo criado no instante 100 ut
+
+01:10:20 WRONG COMMAND => exit
+AL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:10:50 WRONG COMMAND => exit
+AL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:10:51 WRONG COMMAND => exit
+AL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:10:51 WRONG COMMAND => exit
+AL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:15:24 WRONG COMMAND => exit
+AL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:15:33 WRONG COMMAND => exit
+AL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:15:37 WRONG COMMAND => exit
+AL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:15:40 WRONG COMMAND => exit
+AL TP437 init: 80 eta: 100 fuel: 1000
+
+
+01:26:56 Gestor de simulação iniciado. Pid: 1233
+01:26:56 Torre de controlo iniciada. Pid: 1234
+01:27:05 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+
+01:27:13 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+
+
+01:27:21 Voo criado no instante 50 ut
+
+01:27:46 Voo criado no instante 100 ut
+
+01:28:29 WRONG COMMAND => exit
+AL TP437 init: 50 eta: 100 fuel: 1000
+
+
+01:32:32 Gestor de simulação iniciado. Pid: 1178
+01:32:32 Torre de controlo iniciada. Pid: 1179
+01:32:47 NEW COMMAND => ARRIVAL TP437 init: 60 eta: 100 fuel: 1000
+01:33:02 Voo criado no instante 60 ut
+
+01:33:19 WRONG COMMAND => exit
+AL TP437 init: 60 eta: 100 fuel: 100
+01:33:27 WRONG COMMAND => exit
+AL TP437 init: 60 eta: 100 fuel: 10
+01:37:59 Gestor de simulação iniciado. Pid: 1265
+01:37:59 Torre de controlo iniciada. Pid: 1266
+01:38:27 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+01:38:49 Voo criado no instante 100 ut
+01:38:50 WRONG COMMAND => exit
+AL TP437 init: 100 eta: 100 fuel: 100
+01:43:39 Gestor de simulação iniciado. Pid: 1333
+01:43:39 Torre de controlo iniciada. Pid: 1334
+01:43:43 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+01:43:45 WRONG COMMAND => exit
+AL TP437 init: 100 eta: 100 fuel: 100
+01:43:55 WRONG COMMAND => ola
+
+AL TP437 init: 100 eta: 100 fuel: 10
+01:44:29 Voo criado no instante 100 ut
+01:50:32 Gestor de simulação iniciado. Pid: 1418
+01:50:32 Torre de controlo iniciada. Pid: 1419
+01:50:37 Gestor de simulação iniciado. Pid: 1438
+01:50:37 Torre de controlo iniciada. Pid: 1439
+01:50:51 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+01:50:58 NEW COMMAND => ARRIVAL TP437 init: 70 eta: 100 fuel: 1000
+01:51:07 WRONG COMMAND => ola
+01:51:12 Voo criado no instante 70 ut
+01:51:27 Voo criado no instante 100 ut
+01:52:19 Gestor de simulação iniciado. Pid: 1494
+01:52:19 Torre de controlo iniciada. Pid: 1495
+01:52:22 NEW COMMAND => ARRIVAL TP437 init: 70 eta: 100 fuel: 1000
+01:52:28 NEW COMMAND => ARRIVAL TP437 init: 40 eta: 100 fuel: 1000
+01:52:32 WRONG COMMAND => ola
+01:52:39 Voo criado no instante 40 ut
+01:52:54 Voo criado no instante 70 ut
+01:53:08 Torre de controlo iniciada. Pid: 1541
+01:53:08 Gestor de simulação iniciado. Pid: 1540
+01:53:58 Gestor de simulação iniciado. Pid: 1592
+01:53:58 Torre de controlo iniciada. Pid: 1593
