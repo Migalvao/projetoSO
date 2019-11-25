@@ -381,3 +381,14 @@ AL TP437 init: 100 eta: 100 fuel: 10
 16:47:12 WRONG COMMAND => ARRIVAL TP88 init: 1120 eta: 200 fuel: ihgvi
 16:47:22 WRONG COMMAND => ARRIVAL TP88 init: AAA eta: ihgi fuel: 1500
 16:47:34 Servidor terminado
+01:52:29 Gestor de simulação iniciado. Pid: 3459
+01:52:29 Torre de controlo iniciada. Pid: 3460
+01:54:26 Servidor terminado
+01:55:33 Gestor de simulação iniciado. Pid: 3519
+01:55:33 Torre de controlo iniciada. Pid: 3520
+01:56:16 Servidor terminado
+01:57:11 Gestor de simulação iniciado. Pid: 3539
+01:57:11 Torre de controlo iniciada. Pid: 3540
+01:57:30 NEW COMMAND => DEPARTURE TP73 init: 100 takeoff: 1000
+01:57:36 NEW COMMAND => DEPARTURE TP73 init: 100 takeoff: 1000
+01:57:50 Servidor terminado

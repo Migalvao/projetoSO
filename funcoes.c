@@ -171,7 +171,8 @@ int validacao_pipe(char * comando){
                         strcpy(dados_partida->flight_code, partida.flight_code);
                         dados_partida->init = partida.init;
                         dados_partida->takeoff = partida.takeoff;
-                        pthread_create(&thread_intermedia, NULL, criar_partida, dados_partida);
+                        thread_list_prt = adicionar_nova_prt(thread_list_prt, dados_partida);
+                        //pthread_create(&thread_intermedia, NULL, criar_partida, dados_partida);
                         return 0;
                     }
 		        }              
@@ -214,7 +215,8 @@ int validacao_pipe(char * comando){
                             dados_chegada->init = chegada.init;
                             dados_chegada->eta = chegada.eta;
                             dados_chegada->fuel = chegada.fuel;
-                            pthread_create(&thread_intermedia, NULL, criar_chegada, dados_chegada);
+                            //pthread_create(&thread_intermedia, NULL, criar_chegada, dados_chegada);
+                            thread_list_atr = adicionar_nova_atr(thread_list_atr, dados_chegada);
                             return 0;
                         }
                     }
@@ -222,5 +224,53 @@ int validacao_pipe(char * comando){
             }
         }   
     return 1;
+    }
+}
+
+thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada * voo){
+    thread_atr novo_voo_atr = (thread_atr)malloc(sizeof(node_atr));
+    novo_voo_atr->next = NULL;
+    novo_voo_atr->voo = voo;
+
+    if(thread_list == NULL){
+        thread_list = novo_voo_atr;
+        return thread_list;
+    } else {
+        thread_atr atual = thread_list;
+        while (atual->next != NULL) {
+            if (atual->next->voo->init >= novo_voo_atr->voo->init) {
+                atual = atual->next;
+            } else {
+                novo_voo_atr->next = atual->next;
+                atual->next = novo_voo_atr;
+                return thread_list;
+            }
+        }
+        atual->next = novo_voo_atr;
+        return thread_list;
+    }
+}
+thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida * voo){
+    //Criar o no
+    thread_prt novo_voo_prt = (thread_prt)malloc(sizeof(node_prt));
+    novo_voo_prt->next = NULL;
+    novo_voo_prt->voo = voo;
+
+    if(thread_list == NULL){
+        thread_list = novo_voo_prt;
+        return thread_list;
+    } else {
+        thread_prt atual = thread_list;
+        while (atual->next != NULL) {
+            if (atual->next->voo->init >= novo_voo_prt->voo->init) {
+                atual = atual->next;
+            } else {
+                novo_voo_prt->next = atual->next;
+                atual->next = novo_voo_prt;
+                return thread_list;
+            }
+        }
+        atual->next = novo_voo_prt;
+        return thread_list;
     }
 }

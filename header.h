@@ -66,17 +66,27 @@ typedef struct departure_flight{
 		takeoff;    
 } voo_partida;
 
-typedef struct thread_no * thread;
+typedef struct no_atr * thread_atr;
 
-typedef struct thread_no
+typedef struct no_atr
 {
-    thread next;
-    pthread_t thread_id;
-} thread_node;
+    thread_atr next;
+    voo_chegada * voo;
+} node_atr;
+
+typedef struct no_prt * thread_prt;
+
+typedef struct no_prt
+{
+    thread_prt next;
+    voo_partida * voo;
+} node_prt;
 
 //variaveis globais
 configuracoes gs_configuracoes;
-//thread thread_list = NULL;
+thread_prt thread_list_prt;      //lista para criar threads de partidas
+thread_atr thread_list_atr;      //Lista para criar thread de aterragens
+
 time_t t_inicial;
 sem_t * sem_estatisticas;       //semaforo para estatisticas
 sem_t * sem_chegadas;           //semaforo para chegadas
@@ -102,3 +112,7 @@ void * criar_partida(void * t);
 void * chegada(void * t);
 
 void * criar_chegada(void * t);
+
+thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada * voo);
+
+thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida * voo);

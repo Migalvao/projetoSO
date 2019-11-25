@@ -53,6 +53,10 @@ void gestor_simulacao(){
 
 int main(void){
 	le_configuracoes(&gs_configuracoes);
+	//listas ligadas para criar as threads
+	thread_list_prt = NULL;
+	thread_list_atr = NULL;
+
 
     //MESSAGE QUEUE
     if ((msg_q_id= msgget(IPC_PRIVATE,IPC_CREAT | 0700))==-1){
@@ -60,7 +64,7 @@ int main(void){
     }
 
     //SHARED MEMORY
-    if( (shmid = shm_open(SHARED_MEM_NAME,   O_RDWR | O_CREAT ,0777)) == -1){
+    if((shmid = shm_open(SHARED_MEM_NAME,   O_RDWR | O_CREAT ,0777)) == -1){
         printf("Error creating memory\n");
         exit(1);
     }
