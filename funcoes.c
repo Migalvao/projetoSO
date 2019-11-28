@@ -274,3 +274,83 @@ thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida * voo){
         return thread_list;
     }
 }
+voos_partida adicionar_fila_partidas(voos_partida lista_partidas, voo_partida *voo_part){
+    voos_partida nova_partida= (voos_partida)malloc(sizeof(node_partidas));
+    nova_partida->next = NULL;
+    nova_partida->voo_part = voo_part;
+
+    if(lista_partidas==NULL){
+        lista_partidas= nova_partida;
+        return lista_partidas;
+    }
+    else{
+        voos_partida atual= lista_partidas;
+        while(atual->next!=NULL){
+                if(atual->next->voo_part->takeoff >= nova_partida->voo_part->takeoff){
+                    atual=atual->next;
+                }else{
+                    nova_partida->next= atual->next;
+                    atual->next= nova_partida;
+                    return lista_partidas;
+                }
+        }
+        atual->next=nova_partida;
+        return lista_partidas;
+    }
+}
+
+voos_chegada adicionar_fila_chegadas(voos_chegada lista_chegadas, voo_chegada *voo_cheg){
+    voos_chegada nova_chegada= (voos_chegada)malloc(sizeof(node_chegadas));
+    nova_chegada->next= NULL;
+    nova_chegada->voo_cheg= voo_cheg;
+
+    if(lista_chegadas==NULL){
+        lista_chegadas=nova_chegada;
+        return lista_chegadas;
+    }
+    else{
+        voos_chegada atual= lista_chegadas;
+        while(atual->next!=NULL){
+            if(atual->next->voo_cheg->eta>= nova_chegada->voo_cheg->eta){
+                atual=atual->next;
+            }else{
+                nova_chegada->next=atual->next;
+                atual->next=nova_chegada;
+                return lista_chegadas;
+            }
+        }
+        atual->next=nova_chegada;
+        return lista_chegadas;
+    }
+}
+
+voos_chegada adicionar_inicio(voos_chegada lista_prioritarios, voo_chegada * voo_cheg){
+    voos_chegada prioritario= (voos_chegada)malloc(sizeof(node_chegadas));
+    prioritario->next=NULL;
+    prioritario->voo_cheg= voo_cheg;
+
+    if(lista_prioritarios==NULL){
+        lista_prioritarios= prioritario;
+        return lista_prioritarios;
+    }
+    else{
+        prioritario->next=lista_prioritarios;
+        lista_prioritarios=prioritario; 
+    }
+    return lista_prioritarios;
+}
+
+voos_partida remove_partida(voos_partida head){
+    voos_partida aux = head;
+    head = head->next;
+    free(aux);
+    return head;
+}
+
+voos_chegada remove_chegada(voos_chegada head){
+    voos_chegada aux = head;
+    head= head->next;
+    free(aux);
+    return head;
+}
+
