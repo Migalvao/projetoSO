@@ -82,10 +82,19 @@ typedef struct no_prt
     voo_partida * voo;
 } node_prt;
 
+typedef struct{
+    long mytype;
+    int id_slot_shm,
+        inst_partida,
+        ETA,
+        combustivel; 
+}mensagens;
+
 //variaveis globais
 configuracoes gs_configuracoes;
 thread_prt thread_list_prt;      //lista para criar threads de partidas
 thread_atr thread_list_atr;      //Lista para criar thread de aterragens
+
 
 time_t t_inicial;
 sem_t * sem_estatisticas;       //semaforo para estatisticas
