@@ -71,7 +71,7 @@ typedef struct no_atr * thread_atr;
 typedef struct no_atr
 {
     thread_atr next;
-    voo_chegada * voo;
+    voo_chegada voo;
 } node_atr;
 
 typedef struct no_prt * thread_prt;
@@ -79,24 +79,46 @@ typedef struct no_prt * thread_prt;
 typedef struct no_prt
 {
     thread_prt next;
-    voo_partida * voo;
+    voo_partida voo;
 } node_prt;
 
+typedef struct no_fila_partida * voos_partida;
+
+typedef struct no_fila_partida{
+    voos_partida next;
+    int id_slot_shm, takeoff;
+}node_partidas;
+
+typedef struct no_fila_chegada *  voos_chegada;
+
+typedef struct no_fila_chegada{
+    voos_chegada next;
+    int id_slot_shm, eta;
+}node_chegadas;
+
 typedef struct{
-    long mytype;
+    long msg_type;
     int id_slot_shm,
-        inst_partida,
-        ETA,
-        combustivel; 
+        takeoff,
+        eta,
+        fuel; 
 }mensagens;
 
 //variaveis globais
+int msg_q_id;   //MESSAGE QUEUE
+
 configuracoes gs_configuracoes;
 thread_prt thread_list_prt;      //lista para criar threads de partidas
 thread_atr thread_list_atr;      //Lista para criar thread de aterragens
 
+voo_partida * array_voos_partida;       //array de partidas na shm
+voo_chegada * array_voos_chegada;       //array de chegadas na shm
+
+pthread_cond_t is_atr_list_empty, is_prt_list_empty;
 
 time_t t_inicial;
+
+pthread_mutex_t mutex_list_atr, mutex_list_prt;     //Mutexes para as listas de criacao de threads
 sem_t * sem_estatisticas;       //semaforo para estatisticas
 sem_t * sem_chegadas;           //semaforo para chegadas
 sem_t * sem_partidas;           //semaforo para partidas          
@@ -122,6 +144,16 @@ void * chegada(void * t);
 
 void * criar_chegada(void * t);
 
-thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada * voo);
+thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada voo);
 
-thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida * voo);
+thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida voo);
+
+voos_partida adicionar_fila_partidas(voos_partida lista_partidas, mensagens voo_part);
+
+voos_chegada adicionar_fila_chegadas(voos_chegada lista_chegadas, mensagens voo_cheg);
+
+voos_chegada adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_cheg);
+
+voos_partida remove_partida(voos_partida head);
+
+voos_chegada remove_chegada(voos_chegada head);

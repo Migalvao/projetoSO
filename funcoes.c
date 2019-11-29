@@ -81,25 +81,64 @@ void le_configuracoes(configuracoes * configs ){
 }
 
 void * partida(void * t){
-    time_t t_atual = (time(NULL) - t_inicial) * 1000;
+    time_t t_criacao = ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo;
     voo_partida * dados_partida = (voo_partida *)t;
+    mensagens mensagem;
+
     sem_wait(sem_log);
-    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut,takeoff = %d", dados_partida->flight_code, t_atual/gs_configuracoes.unidade_tempo, dados_partida->takeoff);
+    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut,takeoff = %d", dados_partida->flight_code, t_atual, dados_partida->takeoff);
     write_log(mensagem);
     sem_post(sem_log);
+
+    mensagem.id_slot_shm = -1;
+    mensagem.takeoff = dados_partida->takeoff;
+    mensagem.eta = -1;
+    mensagem.fuel = -1;
+    //mensagem.msg_type = 
+
+    if(msgsnd(msg_q_id, &mensagem, sizeof(mensagens)-sizeof(long), 0) == -1){
+            printf("Erro a enviar msg para a Torre de Controlo\n");
+    }
+
+    //falta definir msg_type, ainda n sei qual e
+    if(msgrcv(msg_q_id, &mensagem, sizeof(mensagens)-sizeof(long), msg_type, 0) == -1){
+            printf("Erro a receber a resposta da Torre de Controlo\n");
+    }
+
     free(dados_partida);
     pthread_exit(NULL);
 }
 
 void * criar_partida(void * t){
     pthread_t thread_voo;
-    time_t t_atual = (time(NULL) - t_inicial) * 1000;    
-    //long init = (long)*((int *)t);   //em milissegundos
-    voo_partida * dados_partida = (voo_partida *)t;
-    long wait_time = (dados_partida->init * gs_configuracoes.unidade_tempo) - t_atual;        //em milissegundos
-    printf("Vou esperar %ld segundos para gerar o voo\n", wait_time/1000);
-    usleep(wait_time * 1000);   //microssegundos
-    pthread_create(&thread_voo, NULL, partida,dados_partida);
+    voo_partida * dados_partida;
+    time_t t_atual;        //em ut's
+    while(1){
+
+        pthread_mutex_lock(&mutex_list_prt);
+        while(thread_list_prt == NULL)
+            pthread_cond_wait(&is_prt_list_empty, &mutex_list_prt);
+        t_atual = ((time(NULL) - t_inicial) * 1000) / gs_configuracoes.unidade_tempo;       //em ut's
+
+        if(t_atual < thread_list_prt->voo.init){
+            t_atual ++;
+            usleep(gs_configuracoes.unidade_tempo * 1000);
+        } else {
+            thread_prt atual = thread_list_prt;
+            while(thread_list_prt != NULL && t_atual == thread_list_prt->voo.init){
+                dados_partida = (voo_partida *)malloc(sizeof(voo_partida));
+                strcpy(dados_partida->flight_code, thread_list_prt->voo.flight_code);
+                dados_partida->init = thread_list_prt->voo.init;
+                dados_partida->takeoff = thread_list_prt->voo.takeoff;
+                pthread_create(&thread_voo, NULL, partida, dados_partida);
+                //Remove da lista o que ja foi criado e passa para o seguinte
+                atual = thread_list_prt->next;
+                free(thread_list_prt);
+                thread_list_prt = atual;
+            }
+        }
+        pthread_mutex_unlock(&mutex_list_prt);
+    }
     pthread_exit(NULL);
 }
 
@@ -116,12 +155,35 @@ void * chegada(void * t){
 
 void * criar_chegada(void * t){
     pthread_t thread_voo;
-    time_t t_atual = (time(NULL) - t_inicial) * 1000;    
-    //long init = (long)*((int *)t);   //em milissegundos
-    voo_chegada * dados_chegada = (voo_chegada *)t;
-    long wait_time = (dados_chegada->init * gs_configuracoes.unidade_tempo) - t_atual;        //em milissegundos
-    printf("Vou esperar %ld segundos para gerar o voo\n", wait_time/1000);
-    usleep(wait_time * 1000);   //microssegundos
+    voo_chegada * dados_chegada;
+    time_t t_atual;        //em ut's
+    while(1){
+
+        pthread_mutex_lock(&mutex_list_atr);
+        while(thread_list_atr == NULL)
+            pthread_cond_wait(&is_atr_list_empty, &mutex_list_atr);
+        t_atual = ((time(NULL) - t_inicial) * 1000) / gs_configuracoes.unidade_tempo;        //em ut's
+
+        if(t_atual < thread_list_atr->voo.init){
+            t_atual ++;
+            usleep(gs_configuracoes.unidade_tempo * 1000);
+        } else {
+            thread_atr atual = thread_list_atr;
+            while(thread_list_atr != NULL && t_atual == thread_list_atr->voo.init){
+                dados_chegada = (voo_chegada *)malloc(sizeof(voo_chegada));
+                strcpy(dados_chegada->flight_code, thread_list_atr->voo.flight_code);
+                dados_chegada->init = thread_list_atr->voo.init;
+                dados_chegada->eta = thread_list_atr->voo.eta;
+                dados_chegada->fuel = thread_list_atr->voo.fuel;
+                pthread_create(&thread_voo, NULL, chegada, dados_chegada);
+                //Remove da lista o que ja foi criado e passa para o seguinte
+                atual = thread_list_atr->next;
+                free(thread_list_atr);
+                thread_list_atr = atual;
+            }
+        }
+        pthread_mutex_unlock(&mutex_list_atr);
+    }
     pthread_create(&thread_voo, NULL, chegada,dados_chegada);
     pthread_exit(NULL);
 }
@@ -167,12 +229,10 @@ int validacao_pipe(char * comando){
                     //printf("%d\n",partida.takeoff);
                     token = strtok(NULL, delimitador);
                     if(token == NULL){
-                        dados_partida = (voo_partida *)malloc(sizeof(voo_partida));
-                        strcpy(dados_partida->flight_code, partida.flight_code);
-                        dados_partida->init = partida.init;
-                        dados_partida->takeoff = partida.takeoff;
-                        thread_list_prt = adicionar_nova_prt(thread_list_prt, dados_partida);
-                        //pthread_create(&thread_intermedia, NULL, criar_partida, dados_partida);
+                        pthread_mutex_lock(&mutex_list_prt);
+                        thread_list_prt = adicionar_nova_prt(thread_list_prt, partida);
+                        pthread_cond_signal(&is_prt_list_empty);
+                        pthread_mutex_unlock(&mutex_list_prt);
                         return 0;
                     }
 		        }              
@@ -210,13 +270,10 @@ int validacao_pipe(char * comando){
                         //printf("%d\n", chegada.fuel);
                         token= strtok(NULL,delimitador);
                         if(token == NULL){
-                            dados_chegada = (voo_chegada *)malloc(sizeof(voo_chegada));
-                            strcpy(dados_chegada->flight_code, chegada.flight_code);
-                            dados_chegada->init = chegada.init;
-                            dados_chegada->eta = chegada.eta;
-                            dados_chegada->fuel = chegada.fuel;
-                            //pthread_create(&thread_intermedia, NULL, criar_chegada, dados_chegada);
-                            thread_list_atr = adicionar_nova_atr(thread_list_atr, dados_chegada);
+                            pthread_mutex_lock(&mutex_list_atr);
+                            thread_list_atr = adicionar_nova_atr(thread_list_atr, chegada);
+                            pthread_cond_signal(&is_atr_list_empty);
+                            pthread_mutex_unlock(&mutex_list_atr);
                             return 0;
                         }
                     }
@@ -227,7 +284,7 @@ int validacao_pipe(char * comando){
     }
 }
 
-thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada * voo){
+thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada voo){
     thread_atr novo_voo_atr = (thread_atr)malloc(sizeof(node_atr));
     novo_voo_atr->next = NULL;
     novo_voo_atr->voo = voo;
@@ -238,7 +295,7 @@ thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada * voo){
     } else {
         thread_atr atual = thread_list;
         while (atual->next != NULL) {
-            if (atual->next->voo->init >= novo_voo_atr->voo->init) {
+            if (atual->next->voo.init >= novo_voo_atr->voo.init) {
                 atual = atual->next;
             } else {
                 novo_voo_atr->next = atual->next;
@@ -250,7 +307,7 @@ thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada * voo){
         return thread_list;
     }
 }
-thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida * voo){
+thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida voo){
     //Criar o no
     thread_prt novo_voo_prt = (thread_prt)malloc(sizeof(node_prt));
     novo_voo_prt->next = NULL;
@@ -262,7 +319,7 @@ thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida * voo){
     } else {
         thread_prt atual = thread_list;
         while (atual->next != NULL) {
-            if (atual->next->voo->init >= novo_voo_prt->voo->init) {
+            if (atual->next->voo.init >= novo_voo_prt->voo.init) {
                 atual = atual->next;
             } else {
                 novo_voo_prt->next = atual->next;
@@ -274,10 +331,11 @@ thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida * voo){
         return thread_list;
     }
 }
-voos_partida adicionar_fila_partidas(voos_partida lista_partidas, voo_partida *voo_part){
+voos_partida adicionar_fila_partidas(voos_partida lista_partidas, mensagens voo_part){
     voos_partida nova_partida= (voos_partida)malloc(sizeof(node_partidas));
     nova_partida->next = NULL;
-    nova_partida->voo_part = voo_part;
+    nova_partida->id_slot_shm = voo_part.id_slot_shm;
+    nova_partida->takeoff = voo_part.takeoff;
 
     if(lista_partidas==NULL){
         lista_partidas= nova_partida;
@@ -286,7 +344,7 @@ voos_partida adicionar_fila_partidas(voos_partida lista_partidas, voo_partida *v
     else{
         voos_partida atual= lista_partidas;
         while(atual->next!=NULL){
-                if(atual->next->voo_part->takeoff >= nova_partida->voo_part->takeoff){
+                if(atual->next->takeoff >= nova_partida->takeoff){
                     atual=atual->next;
                 }else{
                     nova_partida->next= atual->next;
@@ -299,10 +357,11 @@ voos_partida adicionar_fila_partidas(voos_partida lista_partidas, voo_partida *v
     }
 }
 
-voos_chegada adicionar_fila_chegadas(voos_chegada lista_chegadas, voo_chegada *voo_cheg){
+voos_chegada adicionar_fila_chegadas(voos_chegada lista_chegadas, mensagens voo_cheg){
     voos_chegada nova_chegada= (voos_chegada)malloc(sizeof(node_chegadas));
     nova_chegada->next= NULL;
-    nova_chegada->voo_cheg= voo_cheg;
+    nova_chegada->id_slot_shm = voo_cheg.id_slot_shm;
+    nova_chegada->eta = voo_cheg.eta;
 
     if(lista_chegadas==NULL){
         lista_chegadas=nova_chegada;
@@ -311,7 +370,7 @@ voos_chegada adicionar_fila_chegadas(voos_chegada lista_chegadas, voo_chegada *v
     else{
         voos_chegada atual= lista_chegadas;
         while(atual->next!=NULL){
-            if(atual->next->voo_cheg->eta>= nova_chegada->voo_cheg->eta){
+            if(atual->next->eta >= nova_chegada->eta){
                 atual=atual->next;
             }else{
                 nova_chegada->next=atual->next;
@@ -324,10 +383,12 @@ voos_chegada adicionar_fila_chegadas(voos_chegada lista_chegadas, voo_chegada *v
     }
 }
 
-voos_chegada adicionar_inicio(voos_chegada lista_prioritarios, voo_chegada * voo_cheg){
+voos_chegada adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_cheg){
+    //adicionar voo marcado como urgente, ou seja, inserir no inicio da fila/lista
     voos_chegada prioritario= (voos_chegada)malloc(sizeof(node_chegadas));
     prioritario->next=NULL;
-    prioritario->voo_cheg= voo_cheg;
+    prioritario->id_slot_shm = voo_cheg.id_slot_shm;
+    prioritario->eta = voo_cheg.eta;
 
     if(lista_prioritarios==NULL){
         lista_prioritarios= prioritario;

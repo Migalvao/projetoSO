@@ -1,26 +1,39 @@
 //PARA COMPILAR: gcc -Wall -pthread main.c -o main -lrt
 #include "header.h"
-
-int msg_q_id;   //MESSAGE QUEUE 
+ 
 int fd_pipe;    //PIPE
 int shmid;      //SHARED MEMORY
-int * array_voos_partida;
-int * array_voos_chegada;
 
 estatisticas_sistema * estatisticas;
 
 char comando[MAX_SIZE_COMANDO];
 
 void torre_controlo(){
+    //inicializar o array de partidas
+    sem_wait(sem_partidas);
+    for(int i=0; i < gs_configuracoes.qnt_max_partidas; i++)
+        array_voos_partida[i].init = -1;
+    sem_post(sem_partidas);
+
+    //inicializar o array de partidas
+    sem_wait(sem_chegadas);
+    for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++)
+        array_voos_chegada[i].init = -1;
+    sem_post(sem_chegadas);
+
     sem_wait(sem_log);
     sprintf(mensagem, "Torre de controlo iniciada. Pid: %d", getpid());
     write_log(mensagem);
     sem_post(sem_log);
+
 }
 
 void gestor_simulacao(){
     char * command;
+    pthread_t thread_criadora_partidas, thread_criadora_chegadas;
     time(&t_inicial);   //definir o tempo inicial, declarado em header.h
+    pthread_create(&thread_criadora_partidas, NULL, criar_partida, NULL);
+    pthread_create(&thread_criadora_chegadas, NULL, criar_chegada, NULL);
     sem_wait(sem_log);
     sprintf(mensagem, "Gestor de simulação iniciado. Pid: %d",getpid());
     write_log(mensagem);
@@ -56,6 +69,12 @@ int main(void){
 	//listas ligadas para criar as threads
 	thread_list_prt = NULL;
 	thread_list_atr = NULL;
+	//mutexes para essas listas
+	pthread_mutex_init(&mutex_list_prt, NULL);
+	pthread_mutex_init(&mutex_list_atr, NULL);
+	//CV's para as listas
+	pthread_cond_init(&is_prt_list_empty, NULL);
+	pthread_cond_init(&is_atr_list_empty, NULL);
 
 
     //MESSAGE QUEUE
@@ -76,10 +95,10 @@ int main(void){
     //para alterar as estatisticas faz se atraves deste ponteiro   
     estatisticas = (estatisticas_sistema *) mmap(NULL, sizeof(estatisticas_sistema), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid, 0);
     
-    array_voos_partida = (int *)mmap(NULL, gs_configuracoes.qnt_max_partidas * sizeof(voo_partida), PROT_WRITE  | PROT_READ, MAP_SHARED,shmid, sizeof(estatisticas_sistema));
+    array_voos_partida = (voo_partida *)mmap(NULL, gs_configuracoes.qnt_max_partidas * sizeof(voo_partida), PROT_WRITE  | PROT_READ, MAP_SHARED,shmid, sizeof(estatisticas_sistema));
     //size = gs_configuracoes.qnt_max_partidas
 
-    array_voos_chegada = (int *)mmap(NULL, gs_configuracoes.qnt_max_chegadas * sizeof(voo_chegada), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid, sizeof(estatisticas_sistema) + gs_configuracoes.qnt_max_partidas * sizeof(voo_partida));
+    array_voos_chegada = (voo_chegada *)mmap(NULL, gs_configuracoes.qnt_max_chegadas * sizeof(voo_chegada), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid, sizeof(estatisticas_sistema) + gs_configuracoes.qnt_max_partidas * sizeof(voo_partida));
     //size = gs_configuracoes.qnt_max_chegadas
 
     //SEMAFOROS
