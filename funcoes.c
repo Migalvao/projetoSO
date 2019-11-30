@@ -112,6 +112,7 @@ void * partida(void * t){
     time_t t_criacao = ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo;
     voo_partida * dados_partida = (voo_partida *)t;
     mensagens msg;
+    char pista[3];
 
     sem_wait(sem_log);
     sprintf(mensagem, "Sou o voo %s criado no instante %ld ut,takeoff = %d", dados_partida->flight_code, t_criacao, dados_partida->takeoff);
@@ -162,10 +163,35 @@ void * partida(void * t){
     while(array_voos_partida[msg.id_slot_shm].takeoff > 0)
         pthread_cond_wait(&check_prt, &mutex_array_prt);
 
-    //Thread vai terminar porque o voo partiu
+    //Thread vai iniciar descolagem
     array_voos_partida[msg.id_slot_shm].takeoff = -1;
     array_voos_partida[msg.id_slot_shm].init = -1;
+    strcpy(pista, array_voos_partida[msg.id_slot_shm].pista);
     pthread_mutex_unlock(&mutex_array_prt);
+
+    if(strcmp(pista, PISTA_01L) == 0)
+        pthread_mutex_lock(&mutex_01L);
+    else
+        pthread_mutex_lock(&mutex_01R);
+
+    sem_wait(sem_log);
+    sprintf(mensagem, "%s DEPARTURE %s started", dados_partida->flight_code, pista);
+    write_log(mensagem);
+    sem_post(sem_log);
+
+    usleep(gs_configuracoes.dur_descolagem);
+
+    sem_wait(sem_log);
+    sprintf(mensagem, "%s DEPARTURE %s concluded", dados_partida->flight_code, pista);
+    write_log(mensagem);
+    sem_post(sem_log);
+
+    usleep(gs_configuracoes.int_descolagem);
+
+    if(strcmp(pista, PISTA_01L) == 0)
+        pthread_mutex_unlock(&mutex_01L);
+    else
+        pthread_mutex_unlock(&mutex_01R);
 
     sem_wait(sem_estatisticas);
     estatisticas->n_voos_descolados ++;
@@ -213,6 +239,7 @@ void * chegada(void * t){
     time_t t_atual;
     voo_chegada * dados_chegada = (voo_chegada *)t;
     mensagens msg;
+    char pista[4];
 
     sem_wait(sem_log);
     sprintf(mensagem, "Sou o voo %s criado no instante %ld ut, eta = %d ut,fuel = %d", dados_chegada->flight_code, t_criacao, dados_chegada->eta, dados_chegada->fuel);
@@ -278,6 +305,14 @@ void * chegada(void * t){
     if(array_voos_chegada[msg.id_slot_shm].fuel == 0){
         //thread vai terminar porque o voo foi redirecionado
         array_voos_chegada[msg.id_slot_shm].fuel = -1;
+        array_voos_chegada[msg.id_slot_shm].init = -1;
+        pthread_mutex_unlock(&mutex_array_atr);
+
+        //remover da fila de espera
+        pthread_mutex_lock(&mutex_fila_chegadas);
+        remove_por_id(fila_espera_chegadas, msg.id_slot_shm);
+        pthread_mutex_unlock(&mutex_fila_chegadas);
+
         sem_wait(sem_log);
         sprintf(mensagem, "%s LEAVING TO OTHER AIRPORT => FUEL = 0", dados_chegada->flight_code);
         write_log(mensagem);
@@ -287,16 +322,45 @@ void * chegada(void * t){
         estatisticas->n_voos_redirecionados ++;
         sem_post(sem_estatisticas);
 
-    } else if(array_voos_chegada[msg.id_slot_shm].eta == 0){
-        //Thread vai acabar porque a aterragem terminou
-        array_voos_chegada[msg.id_slot_shm].eta = -1;
-        sem_wait(sem_estatisticas);
-        estatisticas->n_voos_aterrados ++;
-        sem_post(sem_estatisticas);
-    }
+        free(dados_chegada);
+        pthread_exit(NULL);
 
+    } 
+
+    //Vai iniciar aterragem
+    array_voos_chegada[msg.id_slot_shm].eta = -1;
     array_voos_chegada[msg.id_slot_shm].init = -1;
+    strcpy(pista, array_voos_chegada[msg.id_slot_shm].pista);
+
     pthread_mutex_unlock(&mutex_array_atr);
+
+    if(strcmp(pista, PISTA_28L) == 0)
+        pthread_mutex_lock(&mutex_28L);
+    else
+        pthread_mutex_lock(&mutex_28R);
+
+    sem_wait(sem_log);
+    sprintf(mensagem, "%s LANDING %s started", dados_chegada->flight_code, pista);
+    write_log(mensagem);
+    sem_post(sem_log);
+
+    usleep(gs_configuracoes.dur_aterragem);
+
+    sem_wait(sem_log);
+    sprintf(mensagem, "%s LANDING %s concluded", dados_chegada->flight_code, pista);
+    write_log(mensagem);
+    sem_post(sem_log);
+
+    usleep(gs_configuracoes.int_aterragem);
+
+    if(strcmp(pista, PISTA_28L) == 0)
+        pthread_mutex_unlock(&mutex_28L);
+    else
+        pthread_mutex_unlock(&mutex_28R);
+
+    sem_wait(sem_estatisticas);
+    estatisticas->n_voos_aterrados ++;
+    sem_post(sem_estatisticas);
 
     free(dados_chegada);
     pthread_exit(NULL);

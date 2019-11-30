@@ -7,6 +7,8 @@ int shmid;      //SHARED MEMORY
 char comando[MAX_SIZE_COMANDO];
 
 void torre_controlo(){
+    fila_espera_chegadas = NULL;
+    fila_espera_partidas = NULL;
     pthread_t thread_inicializadora;
     //inicializar a shm
     pthread_create(&thread_inicializadora, NULL, inicializar_shm, NULL);
@@ -66,10 +68,16 @@ int main(void){
 	//listas ligadas para criar as threads
 	thread_list_prt = NULL;
 	thread_list_atr = NULL;
-	//mutexes para essas listas
+	//mutexes
 	pthread_mutex_init(&mutex_list_prt, NULL);
 	pthread_mutex_init(&mutex_list_atr, NULL);
     pthread_mutex_init(&mutex_array_atr, NULL);
+    pthread_mutex_init(&mutex_28L, NULL);
+    pthread_mutex_init(&mutex_28R, NULL);
+    pthread_mutex_init(&mutex_01L, NULL);
+    pthread_mutex_init(&mutex_01R, NULL);
+    pthread_mutex_init(&mutex_fila_chegadas, NULL);
+    pthread_mutex_init(&mutex_fila_partidas, NULL);
 	//CV's para as listas
 	pthread_cond_init(&is_prt_list_empty, NULL);
 	pthread_cond_init(&is_atr_list_empty, NULL);
@@ -132,14 +140,6 @@ int main(void){
         exit(1);
     } 
 
-    /*O gestor de simulacao vai receber
-    comandos pelo pipe, le-los, criar
-    as threads necessarias, por na 
-    message queue para a torre de controlo
-    os receber e a torre de controlo guarda
-    essa informacao (sobre os voos) na 
-    shared memory
-    */
 	gestor_simulacao();
 
     wait(NULL);

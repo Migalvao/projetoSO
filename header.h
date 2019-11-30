@@ -26,6 +26,10 @@
 #define MAX_SIZE_COMANDO 50
 #define MAX_SIZE_MSG 80
 #define SIZE_HORAS 9
+#define PISTA_28L "28L"
+#define PISTA_28R "28R"
+#define PISTA_01L "1L"
+#define PISTA_01R "1R"
 
 
 typedef struct system_stats
@@ -54,14 +58,14 @@ typedef struct config{
 } configuracoes;
 
 typedef struct arrival_flight{
-	char flight_code[10];
+	char flight_code[10], pista[4];
 	int init,
 		eta,
         fuel;        
 } voo_chegada;
 
 typedef struct departure_flight{
-	char flight_code[10];
+	char flight_code[10], pista[3];
 	int init,
 		takeoff;    
 } voo_partida;
@@ -114,12 +118,18 @@ thread_atr thread_list_atr;      //Lista para criar thread de aterragens
 voo_partida * array_voos_partida;       //array de partidas na shm
 voo_chegada * array_voos_chegada;       //array de chegadas na shm
 
+voos_chegada fila_espera_chegadas;
+voos_partida fila_espera_partidas;
+
 pthread_cond_t is_atr_list_empty, is_prt_list_empty, check_atr, check_prt;
 
 time_t t_inicial;
 
-pthread_mutex_t mutex_list_atr, mutex_list_prt, mutex_array_atr, mutex_array_prt;     //Mutexes para as listas de criacao de threads
-                                                                                      //e para o array de chegadas na shm (usado pela condition variable)
+pthread_mutex_t mutex_list_atr, mutex_list_prt;                 //Mutexes para as listas de criacao de threads
+pthread_mutex_t mutex_array_atr, mutex_array_prt;               //mutexes para os arrays na shm
+pthread_mutex_t mutex_28L, mutex_28R, mutex_01L, mutex_01R;     //mutexes para as pistas
+pthread_mutex_t mutex_fila_chegadas, mutex_fila_partidas;       //mutexes para as listas de espera
+
 sem_t * sem_estatisticas;       //semaforo para estatisticas    
 sem_t * sem_log;                //semaforo para o log
 char mensagem[MAX_SIZE_MSG];
@@ -158,3 +168,5 @@ voos_chegada adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_che
 voos_partida remove_partida(voos_partida head);
 
 voos_chegada remove_chegada(voos_chegada head);
+
+voos_chegada remove_por_id(voos_chegada head, int id);
