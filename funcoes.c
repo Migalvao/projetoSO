@@ -83,27 +83,34 @@ void le_configuracoes(configuracoes * configs ){
 void * partida(void * t){
     time_t t_criacao = ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo;
     voo_partida * dados_partida = (voo_partida *)t;
-    mensagens mensagem;
+    mensagens msg;
 
     sem_wait(sem_log);
-    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut,takeoff = %d", dados_partida->flight_code, t_atual, dados_partida->takeoff);
+    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut,takeoff = %d", dados_partida->flight_code, t_criacao, dados_partida->takeoff);
     write_log(mensagem);
     sem_post(sem_log);
 
-    mensagem.id_slot_shm = -1;
-    mensagem.takeoff = dados_partida->takeoff;
-    mensagem.eta = -1;
-    mensagem.fuel = -1;
-    //mensagem.msg_type = 
+    msg.id_slot_shm = -1;
+    msg.takeoff = dados_partida->takeoff;
+    msg.eta = -1;
+    msg.msg_type = 2;
 
-    if(msgsnd(msg_q_id, &mensagem, sizeof(mensagens)-sizeof(long), 0) == -1){
+    if(msgsnd(msg_q_id, &msg, sizeof(mensagens)-sizeof(long), 0) == -1){
             printf("Erro a enviar msg para a Torre de Controlo\n");
     }
 
-    //falta definir msg_type, ainda n sei qual e
-    if(msgrcv(msg_q_id, &mensagem, sizeof(mensagens)-sizeof(long), msg_type, 0) == -1){
+    //msg_type 3 indica que é uma resposta da Torre de Controlo 
+    if(msgrcv(msg_q_id, &msg, sizeof(mensagens)-sizeof(long), 3, 0) == -1){
             printf("Erro a receber a resposta da Torre de Controlo\n");
     }
+
+    sem_wait(sem_partidas);
+    array_voos_partida[msg.id_slot_shm].takeoff = dados_partida->takeoff;
+    array_voos_partida[msg.id_slot_shm].takeoff = dados_partida->init;
+    strcpy(array_voos_partida[msg.id_slot_shm].flight_code, dados_partida->flight_code);
+    sem_post(sem_partidas);
+
+    printf("%s Guardei os meus dados de partida no slot %d\n", dados_partida->flight_code, msg.id_slot_shm);
 
     free(dados_partida);
     pthread_exit(NULL);
@@ -143,12 +150,64 @@ void * criar_partida(void * t){
 }
 
 void * chegada(void * t){
-    time_t t_atual = (time(NULL) - t_inicial) * 1000;
+    time_t t_criacao = ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo;    //em ut's
+    time_t t_atual;
     voo_chegada * dados_chegada = (voo_chegada *)t;
+    mensagens msg;
+
     sem_wait(sem_log);
-    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut, eta = %d ut,fuel = %d", dados_chegada->flight_code, t_atual/gs_configuracoes.unidade_tempo, dados_chegada->eta, dados_chegada->fuel);
+    sprintf(mensagem, "Sou o voo %s criado no instante %ld ut, eta = %d ut,fuel = %d", dados_chegada->flight_code, t_criacao, dados_chegada->eta, dados_chegada->fuel);
     write_log(mensagem);
     sem_post(sem_log);   
+
+    msg.id_slot_shm = -1;
+    msg.takeoff = -1;
+    msg.eta = dados_chegada->eta;
+    //se for urgente, msg_type = 1
+    if(dados_chegada->fuel > (4 + dados_chegada->eta + gs_configuracoes.dur_aterragem))
+        msg.msg_type = 2;
+    else 
+        msg.msg_type = 1;
+
+    if(msgsnd(msg_q_id, &msg, sizeof(mensagens)-sizeof(long), 0) == -1){
+            printf("Erro a enviar msg para a Torre de Controlo\n");
+    }
+
+    if(msg.msg_type == 1){
+        sem_wait(sem_log);
+        sprintf(mensagem, "%s EMERGENCY LANDING REQUESTED", dados_chegada->flight_code);
+        write_log(mensagem);
+        sem_post(sem_log);
+    }
+
+    //msg_type 3 indica que é uma resposta da Torre de Controlo 
+    if(msgrcv(msg_q_id, &msg, sizeof(mensagens)-sizeof(long), 3, 0) == -1){
+            printf("Erro a receber a resposta da Torre de Controlo\n");
+    }
+
+    sem_wait(sem_partidas);
+    array_voos_chegada[msg.id_slot_shm].eta = dados_chegada->eta;   //para tirar depois: deve ser a torre de controlo a colocar o eta
+    array_voos_chegada[msg.id_slot_shm].fuel = dados_chegada->fuel;
+    array_voos_chegada[msg.id_slot_shm].init = dados_chegada->init;
+    strcpy(array_voos_chegada[msg.id_slot_shm].flight_code, dados_chegada->flight_code);
+    sem_post(sem_partidas);
+
+    printf("%s Guardei os meus dados de chegada no slot %d\n", dados_chegada->flight_code,msg.id_slot_shm);
+
+    pthread_mutex_lock(&mutex_array_atr);
+    while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].eta > ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo)
+        pthread_cond_wait(&is_prt_list_empty, &mutex_array_atr);    
+
+    if(array_voos_chegada[msg.id_slot_shm].fuel == 0){
+        array_voos_chegada[msg.id_slot_shm].fuel = -1;
+        sem_wait(sem_log);
+        sprintf(mensagem, "%s LEAVING TO OTHER AIRPORT => FUEL = 0", dados_chegada->flight_code);
+        write_log(mensagem);
+        sem_post(sem_log);
+    }
+
+    pthread_mutex_unlock(&mutex_array_atr);
+
     free(dados_chegada);
     pthread_exit(NULL);
 }
@@ -415,3 +474,16 @@ voos_chegada remove_chegada(voos_chegada head){
     return head;
 }
 
+voos_chegada remove_por_id(voos_chegada head, int id){
+    voos_chegada atual = head;
+    voos_chegada anterior =  head;
+
+    while (atual->next != NULL){
+        if(id == atual->id_slot_shm){
+            anterior->next = atual->next;
+            free(atual);            
+        }
+    atual= atual->next;
+    }
+    return head;
+}

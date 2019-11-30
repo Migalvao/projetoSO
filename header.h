@@ -100,8 +100,7 @@ typedef struct{
     long msg_type;
     int id_slot_shm,
         takeoff,
-        eta,
-        fuel; 
+        eta;
 }mensagens;
 
 //variaveis globais
@@ -114,11 +113,12 @@ thread_atr thread_list_atr;      //Lista para criar thread de aterragens
 voo_partida * array_voos_partida;       //array de partidas na shm
 voo_chegada * array_voos_chegada;       //array de chegadas na shm
 
-pthread_cond_t is_atr_list_empty, is_prt_list_empty;
+pthread_cond_t is_atr_list_empty, is_prt_list_empty, check_fuel;
 
 time_t t_inicial;
 
-pthread_mutex_t mutex_list_atr, mutex_list_prt;     //Mutexes para as listas de criacao de threads
+pthread_mutex_t mutex_list_atr, mutex_list_prt, mutex_array_atr;     //Mutexes para as listas de criacao de threads
+                                                                     //e para o array de chegadas na shm (usado pela condition variable)
 sem_t * sem_estatisticas;       //semaforo para estatisticas
 sem_t * sem_chegadas;           //semaforo para chegadas
 sem_t * sem_partidas;           //semaforo para partidas          

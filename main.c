@@ -26,6 +26,12 @@ void torre_controlo(){
     write_log(mensagem);
     sem_post(sem_log);
 
+    while(1){
+        if(msgrcv(msg_q_id, &mensagem, sizeof(mensagens)-sizeof(long), -2, 0)==-1){
+            printf("ERRO a receber mensagem na torre de controlo.\n");
+        }
+    }
+
 }
 
 void gestor_simulacao(){
@@ -72,9 +78,11 @@ int main(void){
 	//mutexes para essas listas
 	pthread_mutex_init(&mutex_list_prt, NULL);
 	pthread_mutex_init(&mutex_list_atr, NULL);
+    pthread_mutex_init(&mutex_array_atr, NULL);
 	//CV's para as listas
 	pthread_cond_init(&is_prt_list_empty, NULL);
 	pthread_cond_init(&is_atr_list_empty, NULL);
+    pthread_cond_init(&check_fuel, NULL);
 
 
     //MESSAGE QUEUE
