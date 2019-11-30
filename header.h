@@ -34,7 +34,7 @@ typedef struct system_stats
 		n_voos_aterrados,
 		n_voos_descolados,
 		n_voos_redirecionados,
-		n_voos_rejeitados; 
+		n_voos_rejeitados;
     double tempo_medio_aterrar,     //+ ETA
         tempo_medio_descolar,
         n_medio_holdings_aterragem,
@@ -105,6 +105,7 @@ typedef struct{
 
 //variaveis globais
 int msg_q_id;   //MESSAGE QUEUE
+estatisticas_sistema * estatisticas;
 
 configuracoes gs_configuracoes;
 thread_prt thread_list_prt;      //lista para criar threads de partidas
@@ -113,15 +114,13 @@ thread_atr thread_list_atr;      //Lista para criar thread de aterragens
 voo_partida * array_voos_partida;       //array de partidas na shm
 voo_chegada * array_voos_chegada;       //array de chegadas na shm
 
-pthread_cond_t is_atr_list_empty, is_prt_list_empty, check_fuel;
+pthread_cond_t is_atr_list_empty, is_prt_list_empty, check_atr, check_prt;
 
 time_t t_inicial;
 
-pthread_mutex_t mutex_list_atr, mutex_list_prt, mutex_array_atr;     //Mutexes para as listas de criacao de threads
-                                                                     //e para o array de chegadas na shm (usado pela condition variable)
-sem_t * sem_estatisticas;       //semaforo para estatisticas
-sem_t * sem_chegadas;           //semaforo para chegadas
-sem_t * sem_partidas;           //semaforo para partidas          
+pthread_mutex_t mutex_list_atr, mutex_list_prt, mutex_array_atr, mutex_array_prt;     //Mutexes para as listas de criacao de threads
+                                                                                      //e para o array de chegadas na shm (usado pela condition variable)
+sem_t * sem_estatisticas;       //semaforo para estatisticas    
 sem_t * sem_log;                //semaforo para o log
 char mensagem[MAX_SIZE_MSG];
 
@@ -131,6 +130,8 @@ int verifica_numero(char * nmr);
 void write_log(char* mensagem);
 
 void le_configuracoes(configuracoes * configs);
+
+void * inicializar_shm(void * t);
 
 void * criar_thread(void * init);
 

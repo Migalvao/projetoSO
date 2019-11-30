@@ -4,22 +4,13 @@
 int fd_pipe;    //PIPE
 int shmid;      //SHARED MEMORY
 
-estatisticas_sistema * estatisticas;
-
 char comando[MAX_SIZE_COMANDO];
 
 void torre_controlo(){
-    //inicializar o array de partidas
-    sem_wait(sem_partidas);
-    for(int i=0; i < gs_configuracoes.qnt_max_partidas; i++)
-        array_voos_partida[i].init = -1;
-    sem_post(sem_partidas);
-
-    //inicializar o array de partidas
-    sem_wait(sem_chegadas);
-    for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++)
-        array_voos_chegada[i].init = -1;
-    sem_post(sem_chegadas);
+    pthread_t thread_inicializadora;
+    //inicializar a shm
+    pthread_create(&thread_inicializadora, NULL, inicializar_shm, NULL);
+    pthread_join(thread_inicializadora, NULL);
 
     sem_wait(sem_log);
     sprintf(mensagem, "Torre de controlo iniciada. Pid: %d", getpid());
@@ -82,7 +73,8 @@ int main(void){
 	//CV's para as listas
 	pthread_cond_init(&is_prt_list_empty, NULL);
 	pthread_cond_init(&is_atr_list_empty, NULL);
-    pthread_cond_init(&check_fuel, NULL);
+    pthread_cond_init(&check_atr, NULL);
+    pthread_cond_init(&check_prt, NULL);
 
 
     //MESSAGE QUEUE
@@ -111,16 +103,6 @@ int main(void){
 
     //SEMAFOROS
     if((sem_estatisticas = sem_open(STATS_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
-        printf("Error starting semaphore\n");
-        exit(1);
-    }
-
-    if((sem_partidas = sem_open(DEPARTURES_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
-        printf("Error starting semaphore\n");
-        exit(1);
-    }
-
-    if((sem_chegadas = sem_open(ARRIVALS_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
         printf("Error starting semaphore\n");
         exit(1);
     }
@@ -166,10 +148,6 @@ int main(void){
     //shared memory, pipe, message queue, semaforos, etc
     sem_unlink(LOG_SEMAPHORE);
     sem_close(sem_log);
-    sem_unlink(ARRIVALS_SEMAPHORE);
-    sem_close(sem_chegadas);
-    sem_unlink(DEPARTURES_SEMAPHORE);
-    sem_close(sem_partidas);
     sem_unlink(STATS_SEMAPHORE);
     sem_close(sem_estatisticas);
     unlink(PIPE_NAME);

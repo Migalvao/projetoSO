@@ -80,6 +80,34 @@ void le_configuracoes(configuracoes * configs ){
     fclose (f);
 }
 
+void * inicializar_shm(void * t){
+    //inicializar o array de partidas
+    pthread_mutex_lock(&mutex_array_prt);   
+    for(int i=0; i < gs_configuracoes.qnt_max_partidas; i++)
+        array_voos_partida[i].init = -1;
+    pthread_mutex_unlock(&mutex_array_prt);
+
+    //inicializar o array de chegadas
+    pthread_mutex_lock(&mutex_array_atr);
+    for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++)
+        array_voos_chegada[i].init = -1;
+    pthread_mutex_lock(&mutex_array_atr);
+
+    sem_wait(sem_estatisticas);
+    estatisticas->n_voos_criados = 0;
+    estatisticas->n_voos_aterrados = 0;
+    estatisticas->n_voos_descolados = 0;
+    estatisticas->n_voos_rejeitados = 0;
+    estatisticas->n_voos_redirecionados = 0;
+    estatisticas->tempo_medio_aterrar = 0;
+    estatisticas->tempo_medio_descolar = 0;
+    estatisticas->n_medio_holdings_aterragem = 0;
+    estatisticas->n_medio_holdings_urgencia = 0;
+    sem_post(sem_estatisticas);
+
+    pthread_exit(NULL);
+}
+
 void * partida(void * t){
     time_t t_criacao = ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo;
     voo_partida * dados_partida = (voo_partida *)t;
@@ -89,6 +117,10 @@ void * partida(void * t){
     sprintf(mensagem, "Sou o voo %s criado no instante %ld ut,takeoff = %d", dados_partida->flight_code, t_criacao, dados_partida->takeoff);
     write_log(mensagem);
     sem_post(sem_log);
+
+    sem_wait(sem_estatisticas);
+    estatisticas->n_voos_criados ++;
+    sem_post(sem_estatisticas);
 
     msg.id_slot_shm = -1;
     msg.takeoff = dados_partida->takeoff;
@@ -104,13 +136,40 @@ void * partida(void * t){
             printf("Erro a receber a resposta da Torre de Controlo\n");
     }
 
-    sem_wait(sem_partidas);
+    if(msg.id_slot_shm == -1){
+        sem_wait(sem_log);
+        sprintf(mensagem, "%s FLIGHT REJECTED => SYSTEM FULL", dados_partida->flight_code);
+        write_log(mensagem);
+        sem_post(sem_log);
+
+        sem_wait(sem_estatisticas);
+        estatisticas->n_voos_rejeitados ++;
+        sem_post(sem_estatisticas);
+
+        free(dados_partida);
+        pthread_exit(NULL);
+    }
+
+    pthread_mutex_lock(&mutex_array_prt);
     array_voos_partida[msg.id_slot_shm].takeoff = dados_partida->takeoff;
-    array_voos_partida[msg.id_slot_shm].takeoff = dados_partida->init;
+    array_voos_partida[msg.id_slot_shm].init = dados_partida->init;
     strcpy(array_voos_partida[msg.id_slot_shm].flight_code, dados_partida->flight_code);
-    sem_post(sem_partidas);
+    pthread_mutex_unlock(&mutex_array_prt);
 
     printf("%s Guardei os meus dados de partida no slot %d\n", dados_partida->flight_code, msg.id_slot_shm);
+
+    pthread_mutex_lock(&mutex_array_prt);
+    while(array_voos_partida[msg.id_slot_shm].takeoff > 0)
+        pthread_cond_wait(&check_prt, &mutex_array_prt);
+
+    //Thread vai terminar porque o voo partiu
+    array_voos_partida[msg.id_slot_shm].takeoff = -1;
+    array_voos_partida[msg.id_slot_shm].init = -1;
+    pthread_mutex_unlock(&mutex_array_prt);
+
+    sem_wait(sem_estatisticas);
+    estatisticas->n_voos_descolados ++;
+    sem_post(sem_estatisticas);
 
     free(dados_partida);
     pthread_exit(NULL);
@@ -160,6 +219,10 @@ void * chegada(void * t){
     write_log(mensagem);
     sem_post(sem_log);   
 
+    sem_wait(sem_estatisticas);
+    estatisticas->n_voos_criados ++;
+    sem_post(sem_estatisticas);
+
     msg.id_slot_shm = -1;
     msg.takeoff = -1;
     msg.eta = dados_chegada->eta;
@@ -185,27 +248,54 @@ void * chegada(void * t){
             printf("Erro a receber a resposta da Torre de Controlo\n");
     }
 
-    sem_wait(sem_partidas);
+    if(msg.id_slot_shm == -1){
+        sem_wait(sem_log);
+        sprintf(mensagem, "%s FLIGHT REJECTED => SYSTEM FULL", dados_chegada->flight_code);
+        write_log(mensagem);
+        sem_post(sem_log);
+
+        sem_wait(sem_estatisticas);
+        estatisticas->n_voos_rejeitados ++;
+        sem_post(sem_estatisticas);
+
+        free(dados_chegada);
+        pthread_exit(NULL);
+    }
+
+    pthread_mutex_lock(&mutex_array_atr);
     array_voos_chegada[msg.id_slot_shm].eta = dados_chegada->eta;   //para tirar depois: deve ser a torre de controlo a colocar o eta
     array_voos_chegada[msg.id_slot_shm].fuel = dados_chegada->fuel;
     array_voos_chegada[msg.id_slot_shm].init = dados_chegada->init;
     strcpy(array_voos_chegada[msg.id_slot_shm].flight_code, dados_chegada->flight_code);
-    sem_post(sem_partidas);
+    pthread_mutex_lock(&mutex_array_atr);
 
     printf("%s Guardei os meus dados de chegada no slot %d\n", dados_chegada->flight_code,msg.id_slot_shm);
 
     pthread_mutex_lock(&mutex_array_atr);
-    while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].eta > ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo)
-        pthread_cond_wait(&is_prt_list_empty, &mutex_array_atr);    
+    while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].eta > 0)
+        pthread_cond_wait(&check_atr, &mutex_array_atr);    
 
     if(array_voos_chegada[msg.id_slot_shm].fuel == 0){
+        //thread vai terminar porque o voo foi redirecionado
         array_voos_chegada[msg.id_slot_shm].fuel = -1;
         sem_wait(sem_log);
         sprintf(mensagem, "%s LEAVING TO OTHER AIRPORT => FUEL = 0", dados_chegada->flight_code);
         write_log(mensagem);
         sem_post(sem_log);
+
+        sem_wait(sem_estatisticas);
+        estatisticas->n_voos_redirecionados ++;
+        sem_post(sem_estatisticas);
+
+    } else if(array_voos_chegada[msg.id_slot_shm].eta == 0){
+        //Thread vai acabar porque a aterragem terminou
+        array_voos_chegada[msg.id_slot_shm].eta = -1;
+        sem_wait(sem_estatisticas);
+        estatisticas->n_voos_aterrados ++;
+        sem_post(sem_estatisticas);
     }
 
+    array_voos_chegada[msg.id_slot_shm].init = -1;
     pthread_mutex_unlock(&mutex_array_atr);
 
     free(dados_chegada);
