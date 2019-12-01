@@ -51557,3 +51557,93 @@ AL TP437 init: 100 eta: 100 fuel: 10
 15:48:13 Sou o voo TP89 criado no instante 50 ut,takeoff = 100
 15:48:13 Sou o voo TP89 criado no instante 50 ut,takeoff = 100
 15:48:20 Servidor terminado
+00:56:30 Gestor de simulação iniciado. Pid: 5856
+00:58:33 Gestor de simulação iniciado. Pid: 5896
+00:59:23 Gestor de simulação iniciado. Pid: 5931
+00:59:37 Gestor de simulação iniciado. Pid: 5964
+01:00:26 Gestor de simulação iniciado. Pid: 6038
+01:01:12 Gestor de simulação iniciado. Pid: 6073
+01:02:51 Gestor de simulação iniciado. Pid: 6128
+01:20:43 Gestor de simulação iniciado. Pid: 6318
+01:23:53 Gestor de simulação iniciado. Pid: 6360
+01:24:52 Gestor de simulação iniciado. Pid: 6400
+01:27:22 Gestor de simulação iniciado. Pid: 6467
+02:26:04 Gestor de simulação iniciado. Pid: 6752
+02:27:48 Gestor de simulação iniciado. Pid: 6822
+02:31:59 Gestor de simulação iniciado. Pid: 6892
+02:34:08 Gestor de simulação iniciado. Pid: 6972
+02:48:37 Gestor de simulação iniciado. Pid: 7164
+02:50:32 Gestor de simulação iniciado. Pid: 7207
+02:51:00 Gestor de simulação iniciado. Pid: 7247
+02:51:20 Gestor de simulação iniciado. Pid: 7277
+02:53:30 Gestor de simulação iniciado. Pid: 7331
+02:53:30 Torre de controlo iniciada. Pid: 7332
+02:56:02 Gestor de simulação iniciado. Pid: 7372
+02:56:02 Torre de controlo iniciada. Pid: 7373
+02:56:05 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+02:56:12 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 40
+02:56:12 Sou o voo TP437 criado no instante 20 ut, eta = 30 ut,fuel = 40
+02:56:12 TP437 EMERGENCY LANDING REQUESTED
+02:56:12 Sou o voo TP437 criado no instante 20 ut, eta = 30 ut,fuel = 60
+02:56:32 WRONG COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 40
+02:57:39 WRONG COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 40
+02:57:52 Servidor terminado
+03:01:37 Gestor de simulação iniciado. Pid: 7483
+03:01:37 Torre de controlo iniciada. Pid: 7484
+03:01:39 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:01:47 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 40
+03:01:47 Sou o voo TP437 criado no instante 20 ut, eta = 30 ut,fuel = 60
+03:02:07 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 40
+03:02:07 WRONG COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:02:17 WRONG COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:02:27 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 40
+03:02:27 TP437 EMERGENCY LANDING REQUESTED
+03:02:27 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 40
+03:02:27 TP437 EMERGENCY LANDING REQUESTED
+03:07:03 Gestor de simulação iniciado. Pid: 7600
+03:07:03 Torre de controlo iniciada. Pid: 7601
+03:07:06 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:07:13 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 40
+03:07:13 Sou o voo TP437 criado no instante 20 ut, eta = 30 ut,fuel = 60
+03:07:13 WRONG COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:07:24 WRONG COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:07:32 WRONG COMMAND => ARRIVAL TP437 init: 40 eta: 30 fuel: 60
+03:07:39 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 40
+03:07:46 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 60
+03:07:53 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 60
+03:07:53 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 40
+03:07:53 TP437 EMERGENCY LANDING REQUESTED
+03:07:53 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 40
+03:07:53 TP437 EMERGENCY LANDING REQUESTED
+03:11:21 Gestor de simulação iniciado. Pid: 7723
+03:11:21 Torre de controlo iniciada. Pid: 7724
+03:11:27 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:11:31 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:11:31 Sou o voo TP437 criado no instante 20 ut, eta = 30 ut,fuel = 60
+03:11:31 Sou o voo TP437 criado no instante 20 ut, eta = 30 ut,fuel = 60
+03:11:32 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 60
+03:12:11 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 60
+03:12:11 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 60
+03:12:11 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 60
+03:15:43 Gestor de simulação iniciado. Pid: 7807
+03:15:43 Torre de controlo iniciada. Pid: 7808
+03:17:04 Gestor de simulação iniciado. Pid: 7857
+03:17:04 Torre de controlo iniciada. Pid: 7858
+03:18:18 Gestor de simulação iniciado. Pid: 7895
+03:18:18 Torre de controlo iniciada. Pid: 7896
+03:18:20 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:18:28 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 30 fuel: 60
+03:18:28 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 60
+03:18:28 Sou o voo TP437 criado no instante 20 ut, eta = 30 ut,fuel = 60
+03:18:28 Sou o voo TP437 criado no instante 20 ut, eta = 30 ut,fuel = 60
+03:18:46 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 30 fuel: 60
+03:18:46 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 50 fuel: 60
+03:19:08 Sou o voo TP437 criado no instante 100 ut, eta = 50 ut,fuel = 60
+03:19:08 TP437 EMERGENCY LANDING REQUESTED
+03:19:08 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 60
+03:19:08 Sou o voo TP437 criado no instante 100 ut, eta = 30 ut,fuel = 60
+03:20:37 Gestor de simulação iniciado. Pid: 7994
+03:20:37 Torre de controlo iniciada. Pid: 7995
+03:20:41 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 50 fuel: 60
+03:21:27 Sou o voo TP437 criado no instante 100 ut, eta = 50 ut,fuel = 60
+03:21:27 TP437 EMERGENCY LANDING REQUESTED

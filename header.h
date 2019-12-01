@@ -21,7 +21,9 @@
 #define LOG_SEMAPHORE "/log_semaphore"
 #define ARRIVALS_SEMAPHORE "/arrivals_semaphore"
 #define DEPARTURES_SEMAPHORE "/departures_semaphore"
-#define SHARED_MEM_NAME "/gestor_simulacao"
+#define SHM_STATS "/shm_stats"
+#define SHM_DEP "/shm_dep"
+#define SHM_ARR "/shm_arr"
 #define PIPE_NAME "input_pipe" 
 #define MAX_SIZE_COMANDO 50
 #define MAX_SIZE_MSG 80
@@ -157,7 +159,9 @@ void * criar_chegada(void * t);
 
 void * recebe_msq();
 
-thread_msq le_msq();
+int procura_slot_chegada();
+
+int procura_slot_partida();
 
 thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada voo);
 
@@ -175,4 +179,4 @@ void remove_chegada(voos_chegada head);
 
 void remove_por_id(voos_chegada head, int id);
 
-void * recebe_msq();
+void * decrementa_fuel(void * t);

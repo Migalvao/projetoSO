@@ -2,7 +2,7 @@
 #include "header.h"
  
 int fd_pipe;    //PIPE
-int shmid;      //SHARED MEMORY
+int shmid_stats, shmid_dep, shmid_arr;      //SHARED MEMORY
 
 char comando[MAX_SIZE_COMANDO];
 
@@ -11,36 +11,33 @@ void torre_controlo(){
     fila_espera_chegadas = (voos_chegada)malloc(sizeof(node_chegadas));
     fila_espera_chegadas->eta = 0;
     fila_espera_partidas = NULL;
-    pthread_t thread_inicializadora;
+    pthread_t thread_inicializadora, thread_msq, thread_fuel;
     //inicializar a shm
     pthread_create(&thread_inicializadora, NULL, inicializar_shm, NULL);
     pthread_join(thread_inicializadora, NULL);
+
+    pthread_create(&thread_msq, NULL, recebe_msq,NULL);             //thread que controla a msg queue
+    pthread_create(&thread_fuel, NULL, decrementa_fuel,NULL);       //thread que decrementa o fuel a cada UT
 
     sem_wait(sem_log);
     sprintf(mensagem, "Torre de controlo iniciada. Pid: %d", getpid());
     write_log(mensagem);
     sem_post(sem_log);
 
-    while(1){
-        if(msgrcv(msg_q_id, &mensagem, sizeof(mensagens)-sizeof(long), -2, 0)==-1){
-            printf("ERRO a receber mensagem na torre de controlo.\n");
-        }
-    }
+    pthread_join(thread_msq, NULL);
+    pthread_join(thread_fuel, NULL);
 
 }
 
 void gestor_simulacao(){
-    pthread_t thread_msq;
     char * command;
     pthread_t thread_criadora_partidas, thread_criadora_chegadas;
-    time(&t_inicial);   //definir o tempo inicial, declarado em header.h
     pthread_create(&thread_criadora_partidas, NULL, criar_partida, NULL);
     pthread_create(&thread_criadora_chegadas, NULL, criar_chegada, NULL);
     sem_wait(sem_log);
     sprintf(mensagem, "Gestor de simulação iniciado. Pid: %d",getpid());
     write_log(mensagem);
     sem_post(sem_log);
-    pthread_create(&thread_msq, NULL, recebe_msq,NULL);
 
     while(1){
         read(fd_pipe,comando,MAX_SIZE_COMANDO);
@@ -76,6 +73,7 @@ int main(void){
 	pthread_mutex_init(&mutex_list_prt, NULL);
 	pthread_mutex_init(&mutex_list_atr, NULL);
     pthread_mutex_init(&mutex_array_atr, NULL);
+    pthread_mutex_init(&mutex_array_prt, NULL);
     pthread_mutex_init(&mutex_28L, NULL);
     pthread_mutex_init(&mutex_28R, NULL);
     pthread_mutex_init(&mutex_01L, NULL);
@@ -95,23 +93,41 @@ int main(void){
     }
 
     //SHARED MEMORY
-    if((shmid = shm_open(SHARED_MEM_NAME,   O_RDWR | O_CREAT ,0777)) == -1){
+    if((shmid_stats = shm_open(SHM_STATS, O_RDWR | O_CREAT ,0777)) == -1){
         printf("Error creating memory\n");
         exit(1);
     }
 
-    if (ftruncate(shmid, sizeof(estatisticas_sistema) + gs_configuracoes.qnt_max_partidas * sizeof(voo_partida) + gs_configuracoes.qnt_max_chegadas)*sizeof(voo_partida) == -1){
+    if (ftruncate(shmid_stats, sizeof(estatisticas_sistema)) == -1){
+        printf("Error defining size\n");
+        exit(1);
+    }
+
+    if((shmid_dep = shm_open(SHM_DEP, O_RDWR | O_CREAT ,0777)) == -1){
+        printf("Error creating memory\n");
+        exit(1);
+    }
+
+    if (ftruncate(shmid_dep, gs_configuracoes.qnt_max_partidas * sizeof(voo_partida)) == -1){
+        printf("Error defining size\n");
+        exit(1);
+    }
+
+    if((shmid_arr = shm_open(SHM_ARR, O_RDWR | O_CREAT ,0777)) == -1){
+        printf("Error creating memory\n");
+        exit(1);
+    }
+
+    if (ftruncate(shmid_arr, gs_configuracoes.qnt_max_chegadas *sizeof(voo_chegada)) == -1){
         printf("Error defining size\n");
         exit(1);
     }
     //para alterar as estatisticas faz se atraves deste ponteiro   
-    estatisticas = (estatisticas_sistema *) mmap(NULL, sizeof(estatisticas_sistema), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid, 0);
+    estatisticas = (estatisticas_sistema *) mmap(NULL, sizeof(estatisticas_sistema), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid_stats, 0);
     
-    array_voos_partida = (voo_partida *)mmap(NULL, gs_configuracoes.qnt_max_partidas * sizeof(voo_partida), PROT_WRITE  | PROT_READ, MAP_SHARED,shmid, sizeof(estatisticas_sistema));
-    //size = gs_configuracoes.qnt_max_partidas
+    array_voos_partida = (voo_partida *)mmap(NULL, gs_configuracoes.qnt_max_partidas * sizeof(voo_partida), PROT_WRITE  | PROT_READ, MAP_SHARED,shmid_dep, 0);
 
-    array_voos_chegada = (voo_chegada *)mmap(NULL, gs_configuracoes.qnt_max_chegadas * sizeof(voo_chegada), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid, sizeof(estatisticas_sistema) + gs_configuracoes.qnt_max_partidas * sizeof(voo_partida));
-    //size = gs_configuracoes.qnt_max_chegadas
+    array_voos_chegada = (voo_chegada *)mmap(NULL, gs_configuracoes.qnt_max_chegadas * sizeof(voo_chegada), PROT_WRITE  | PROT_READ, MAP_SHARED, shmid_arr, 0);
 
     //SEMAFOROS
     if((sem_estatisticas = sem_open(STATS_SEMAPHORE, O_CREAT, 0777, 1)) == SEM_FAILED){
@@ -124,7 +140,8 @@ int main(void){
         exit(1);
     }
 
-    //Criacao do processo Torre de Controlo e inicio do servidor
+
+    time(&t_inicial);       //definir o tempo inicial, declarado em header.h
     pid_t pid = fork();
 
 	if(pid == 0){

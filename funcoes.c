@@ -83,15 +83,17 @@ void le_configuracoes(configuracoes * configs ){
 void * inicializar_shm(void * t){
     //inicializar o array de partidas
     pthread_mutex_lock(&mutex_array_prt);   
-    for(int i=0; i < gs_configuracoes.qnt_max_partidas; i++)
+    for(int i=0; i < gs_configuracoes.qnt_max_partidas; i++){
         array_voos_partida[i].init = -1;
+    }
     pthread_mutex_unlock(&mutex_array_prt);
 
     //inicializar o array de chegadas
     pthread_mutex_lock(&mutex_array_atr);
-    for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++)
+    for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++){
         array_voos_chegada[i].init = -1;
-    pthread_mutex_lock(&mutex_array_atr);
+    }
+    pthread_mutex_unlock(&mutex_array_atr);
 
     sem_wait(sem_estatisticas);
     estatisticas->n_voos_criados = 0;
@@ -179,14 +181,14 @@ void * partida(void * t){
     write_log(mensagem);
     sem_post(sem_log);
 
-    usleep(gs_configuracoes.dur_descolagem);
+    usleep(gs_configuracoes.dur_descolagem * 1000);
 
     sem_wait(sem_log);
     sprintf(mensagem, "%s DEPARTURE %s concluded", dados_partida->flight_code, pista);
     write_log(mensagem);
     sem_post(sem_log);
 
-    usleep(gs_configuracoes.int_descolagem);
+    usleep(gs_configuracoes.int_descolagem * 1000);
 
     if(strcmp(pista, PISTA_01L) == 0)
         pthread_mutex_unlock(&mutex_01L);
@@ -294,11 +296,12 @@ void * chegada(void * t){
     array_voos_chegada[msg.id_slot_shm].fuel = dados_chegada->fuel;
     array_voos_chegada[msg.id_slot_shm].init = dados_chegada->init;
     strcpy(array_voos_chegada[msg.id_slot_shm].flight_code, dados_chegada->flight_code);
-    pthread_mutex_lock(&mutex_array_atr);
+    pthread_mutex_unlock(&mutex_array_atr);
 
     printf("%s Guardei os meus dados de chegada no slot %d\n", dados_chegada->flight_code,msg.id_slot_shm);
 
     pthread_mutex_lock(&mutex_array_atr);
+    printf("fuel: %d", array_voos_chegada[msg.id_slot_shm].fuel);
     while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].eta > 0)
         pthread_cond_wait(&check_atr, &mutex_array_atr);    
 
@@ -344,14 +347,14 @@ void * chegada(void * t){
     write_log(mensagem);
     sem_post(sem_log);
 
-    usleep(gs_configuracoes.dur_aterragem);
+    usleep(gs_configuracoes.dur_aterragem * 1000);
 
     sem_wait(sem_log);
     sprintf(mensagem, "%s LANDING %s concluded", dados_chegada->flight_code, pista);
     write_log(mensagem);
     sem_post(sem_log);
 
-    usleep(gs_configuracoes.int_aterragem);
+    usleep(gs_configuracoes.int_aterragem * 1000);
 
     if(strcmp(pista, PISTA_28L) == 0)
         pthread_mutex_unlock(&mutex_28L);
@@ -651,11 +654,19 @@ void remove_por_id(voos_chegada head, int id){
 }
 
 
-int procura_slot(){
+int procura_slot_chegadas(){
     for(int i=0; i < gs_configuracoes.qnt_max_chegadas;i++){
 
         if(array_voos_chegada[i].init== -1)
             return i;
+    }
+    return -1;
+}
+
+int procura_slot_partidas(){
+    for(int i=0; i<gs_configuracoes.qnt_max_partidas;i++){
+        if(array_voos_partida[i].init==-1)
+        return i;
     }
     return -1;
 }
@@ -669,16 +680,16 @@ void * recebe_msq(void* t){
             printf("ERRO a receber mensagem na torre de controlo.\n");
         if(voo.takeoff==-1){
             if(voo.msg_type==1){
-                voo.id_slot_shm= procura_slot();
-                adicionar_inicio(lista_voos_chegada, voo);
+                voo.id_slot_shm= procura_slot_chegadas();
+                adicionar_inicio(fila_espera_chegadas, voo);
                 voo.msg_type=3;
                 if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
                     printf("ERRO a enviar mensagem.\n");
                 }
             }
             else if(voo.msg_type==2){
-                voo.id_slot_shm= procura_slot();
-                adicionar_fila_chegadas(lista_voos_chegada,voo);
+                voo.id_slot_shm= procura_slot_chegadas();
+                adicionar_fila_chegadas(fila_espera_chegadas,voo);
                 voo.msg_type=3;
                 if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
                     printf("ERRO a enviar mensagem.\n");
@@ -686,13 +697,26 @@ void * recebe_msq(void* t){
             }
         }
         else{
-            voo.id_slot_shm=procura_slot();
-            adicionar_fila_partidas(lista_voos_partida,voo);
+            voo.id_slot_shm=procura_slot_partidas();
+            adicionar_fila_partidas(fila_espera_partidas,voo);
             voo.msg_type=3;
             if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
                printf("ERRO a enviar mensagem.\n");
             }     
         }
+    }
+}
+
+void * decrementa_fuel(void * t){
+    while(1){
+        pthread_mutex_lock(&mutex_array_atr);
+        for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++){
+            array_voos_chegada[i].fuel--;
+        }
+        printf("fuel-- %ld\n", ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo);
+        pthread_cond_broadcast(&check_atr);
+        pthread_mutex_unlock(&mutex_array_atr);
+        usleep(gs_configuracoes.unidade_tempo * 1000);
     }
 }
 
