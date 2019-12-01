@@ -570,48 +570,52 @@ voos_partida adicionar_fila_partidas(voos_partida lista_partidas, mensagens voo_
     }
 }
 
-voos_chegada adicionar_fila_chegadas(voos_chegada lista_chegadas, mensagens voo_cheg){
+void adicionar_fila_chegadas(voos_chegada lista_chegadas, mensagens voo_cheg){
+    //a lista_chegadas tem um header node cujo valor de eta é o numero de nos na lista
     voos_chegada nova_chegada= (voos_chegada)malloc(sizeof(node_chegadas));
     nova_chegada->next= NULL;
     nova_chegada->id_slot_shm = voo_cheg.id_slot_shm;
     nova_chegada->eta = voo_cheg.eta;
 
-    if(lista_chegadas==NULL){
-        lista_chegadas=nova_chegada;
-        return lista_chegadas;
+    if(lista_chegadas->next == NULL){
+        lista_chegadas->next = nova_chegada;
+        lista_chegadas->eta = 1;
+        return;
     }
     else{
-        voos_chegada atual= lista_chegadas;
+        voos_chegada atual= lista_chegadas->next;
         while(atual->next!=NULL){
             if(atual->next->eta >= nova_chegada->eta){
                 atual=atual->next;
             }else{
                 nova_chegada->next=atual->next;
                 atual->next=nova_chegada;
-                return lista_chegadas;
+                lista_chegadas->eta ++;
+                return;
             }
         }
         atual->next=nova_chegada;
-        return lista_chegadas;
+        lista_chegadas->eta ++;
+        return;
     }
 }
 
-voos_chegada adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_cheg){
+void adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_cheg){
     //adicionar voo marcado como urgente, ou seja, inserir no inicio da fila/lista
     voos_chegada prioritario= (voos_chegada)malloc(sizeof(node_chegadas));
     prioritario->next=NULL;
     prioritario->id_slot_shm = voo_cheg.id_slot_shm;
     prioritario->eta = voo_cheg.eta;
 
-    if(lista_prioritarios==NULL){
-        lista_prioritarios= prioritario;
-        return lista_prioritarios;
+    if(lista_prioritarios->next == NULL){
+        lista_prioritarios->next = prioritario;
     }
     else{
-        prioritario->next=lista_prioritarios;
-        lista_prioritarios=prioritario; 
+        prioritario->next=lista_prioritarios->next;
+        lista_prioritarios->next=prioritario; 
     }
-    return lista_prioritarios;
+    lista_prioritarios->eta ++;
+    return;
 }
 
 voos_partida remove_partida(voos_partida head){
@@ -621,23 +625,27 @@ voos_partida remove_partida(voos_partida head){
     return head;
 }
 
-voos_chegada remove_chegada(voos_chegada head){
-    voos_chegada aux = head;
-    head= head->next;
+void remove_chegada(voos_chegada head){
+    voos_chegada aux = head->next;
+    head->next= head->next->next;
+    head->eta --;
     free(aux);
-    return head;
+    return;
 }
 
-voos_chegada remove_por_id(voos_chegada head, int id){
-    voos_chegada atual = head;
-    voos_chegada anterior =  head;
+void remove_por_id(voos_chegada head, int id){
+    voos_chegada atual = head->next;
+    voos_chegada anterior =  head->next;
 
     while (atual->next != NULL){
         if(id == atual->id_slot_shm){
             anterior->next = atual->next;
-            free(atual);            
+            free(atual);
+            head->eta --;
+            return;       
         }
     atual= atual->next;
     }
-    return head;
+    printf("Erro: id nao encontrado\n");
+    return;
 }

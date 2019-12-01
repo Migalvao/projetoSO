@@ -7,7 +7,9 @@ int shmid;      //SHARED MEMORY
 char comando[MAX_SIZE_COMANDO];
 
 void torre_controlo(){
-    fila_espera_chegadas = NULL;
+    //a lista da fila de espera de chegadas vai ter um header node que tem em eta o numero de voos a espera
+    fila_espera_chegadas = (voos_chegada)malloc(sizeof(node_chegadas));
+    fila_espera_chegadas->eta = 0;
     fila_espera_partidas = NULL;
     pthread_t thread_inicializadora;
     //inicializar a shm

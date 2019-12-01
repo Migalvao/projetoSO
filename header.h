@@ -161,12 +161,12 @@ thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida voo);
 
 voos_partida adicionar_fila_partidas(voos_partida lista_partidas, mensagens voo_part);
 
-voos_chegada adicionar_fila_chegadas(voos_chegada lista_chegadas, mensagens voo_cheg);
+void adicionar_fila_chegadas(voos_chegada lista_chegadas, mensagens voo_cheg);
 
-voos_chegada adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_cheg);
+void adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_cheg);
 
 voos_partida remove_partida(voos_partida head);
 
-voos_chegada remove_chegada(voos_chegada head);
+void remove_chegada(voos_chegada head);
 
-voos_chegada remove_por_id(voos_chegada head, int id);
+void remove_por_id(voos_chegada head, int id);
