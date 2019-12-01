@@ -155,6 +155,10 @@ void * chegada(void * t);
 
 void * criar_chegada(void * t);
 
+void * recebe_msq();
+
+thread_msq le_msq();
+
 thread_atr adicionar_nova_atr(thread_atr thread_list, voo_chegada voo);
 
 thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida voo);
@@ -170,3 +174,5 @@ voos_partida remove_partida(voos_partida head);
 void remove_chegada(voos_chegada head);
 
 void remove_por_id(voos_chegada head, int id);
+
+void * recebe_msq();

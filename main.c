@@ -30,6 +30,7 @@ void torre_controlo(){
 }
 
 void gestor_simulacao(){
+    pthread_t thread_msq;
     char * command;
     pthread_t thread_criadora_partidas, thread_criadora_chegadas;
     time(&t_inicial);   //definir o tempo inicial, declarado em header.h
@@ -39,6 +40,7 @@ void gestor_simulacao(){
     sprintf(mensagem, "Gestor de simulação iniciado. Pid: %d",getpid());
     write_log(mensagem);
     sem_post(sem_log);
+    pthread_create(&thread_msq, NULL, recebe_msq,NULL);
 
     while(1){
         read(fd_pipe,comando,MAX_SIZE_COMANDO);
