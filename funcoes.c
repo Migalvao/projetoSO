@@ -649,3 +649,50 @@ void remove_por_id(voos_chegada head, int id){
     printf("Erro: id nao encontrado\n");
     return;
 }
+
+
+int procura_slot(){
+    for(int i=0; i < gs_configuracoes.qnt_max_chegadas;i++){
+
+        if(array_voos_chegada[i].init== -1)
+            return i;
+    }
+    return -1;
+}
+
+void * recebe_msq(void* t){
+
+    mensagens voo;
+
+    while(1){
+        if(msgrcv(msg_q_id, &voo, sizeof(mensagens)-sizeof(long), -2, 0)==-1)
+            printf("ERRO a receber mensagem na torre de controlo.\n");
+        if(voo.takeoff==-1){
+            if(voo.msg_type==1){
+                voo.id_slot_shm= procura_slot();
+                adicionar_inicio(lista_voos_chegada, voo);
+                voo.msg_type=3;
+                if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
+                    printf("ERRO a enviar mensagem.\n");
+                }
+            }
+            else if(voo.msg_type==2){
+                voo.id_slot_shm= procura_slot();
+                adicionar_fila_chegadas(lista_voos_chegada,voo);
+                voo.msg_type=3;
+                if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
+                    printf("ERRO a enviar mensagem.\n");
+                }
+            }
+        }
+        else{
+            voo.id_slot_shm=procura_slot();
+            adicionar_fila_partidas(lista_voos_partida,voo);
+            voo.msg_type=3;
+            if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
+               printf("ERRO a enviar mensagem.\n");
+            }     
+        }
+    }
+}
+
