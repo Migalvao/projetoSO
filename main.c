@@ -1,23 +1,22 @@
 //PARA COMPILAR: gcc -Wall -pthread main.c -o main -lrt
 #include "header.h"
  
-int fd_pipe;    //PIPE
-int shmid_stats, shmid_dep, shmid_arr;      //SHARED MEMORY
-
-char comando[MAX_SIZE_COMANDO];
-
 void torre_controlo(){
-    //a lista da fila de espera de chegadas vai ter um header node que tem em eta o numero de voos a espera
+    //a lista da fila de espera de chegadas vai ter um header node que tem no eta o numero de voos a espera
     fila_espera_chegadas = (voos_chegada)malloc(sizeof(node_chegadas));
     fila_espera_chegadas->eta = 0;
+    fila_espera_chegadas->next = NULL;
     fila_espera_partidas = NULL;
-    pthread_t thread_inicializadora, thread_msq, thread_fuel;
+
     //inicializar a shm
     pthread_create(&thread_inicializadora, NULL, inicializar_shm, NULL);
     pthread_join(thread_inicializadora, NULL);
 
-    pthread_create(&thread_msq, NULL, recebe_msq,NULL);             //thread que controla a msg queue
-    pthread_create(&thread_fuel, NULL, decrementa_fuel,NULL);       //thread que decrementa o fuel a cada UT
+    pthread_create(&thread_terminate, NULL, wait_lists, NULL);
+
+    pthread_create(&thread_msq, NULL, recebe_msq,NULL);                 //thread que controla a msg queue
+    pthread_create(&thread_fuel, NULL, decrementa_fuel_eta,NULL);       //thread que decrementa o fuel a cada UT
+    sem_post(torre_controlo_iniciada);
 
     sem_wait(sem_log);
     sprintf(mensagem, "Torre de controlo iniciada. Pid: %d", getpid());
@@ -26,14 +25,28 @@ void torre_controlo(){
 
     pthread_join(thread_msq, NULL);
     pthread_join(thread_fuel, NULL);
-
+    exit(0);
 }
 
 void gestor_simulacao(){
     char * command;
-    pthread_t thread_criadora_partidas, thread_criadora_chegadas;
     pthread_create(&thread_criadora_partidas, NULL, criar_partida, NULL);
     pthread_create(&thread_criadora_chegadas, NULL, criar_chegada, NULL);
+    pthread_create(&thread_sinais, NULL, enviar_sinal_threads,NULL);        //thread que recebe um sinal de outro processo e o transmite para as threads voo
+
+    struct sigaction action;
+    action.sa_handler = termination_handler;
+    sigfillset(&action.sa_mask);        //durante o handler bloquear todos os sinais
+    action.sa_flags = 0;
+
+    sigaction(SIGINT, &action, NULL);
+
+    sigset_t block_signals;
+    sigemptyset(&block_signals);
+    sigfillset(&block_signals);             //bloquear TODOS os sinais
+    sigdelset(&block_signals, SIGINT);      //exceto sigint
+    sigprocmask (SIG_BLOCK, &block_signals, NULL);
+
     sem_wait(sem_log);
     sprintf(mensagem, "Gestor de simulação iniciado. Pid: %d",getpid());
     write_log(mensagem);
@@ -41,14 +54,8 @@ void gestor_simulacao(){
 
     while(1){
         read(fd_pipe,comando,MAX_SIZE_COMANDO);
+        sigaddset(&block_signals, SIGINT);       //enquanto lida com um comando, bloqueia o SIGINT tmb
         command = strtok(comando, "\n");
-        if(strcmp(command, "exit") == 0){
-            sem_wait(sem_log);
-            sprintf(mensagem, "Servidor terminado");
-            write_log(mensagem);
-            sem_post(sem_log);
-            break;
-        }
         if(validacao_pipe(command) == 0){
             sem_wait(sem_log);
             sprintf(mensagem, "NEW COMMAND => %s",command);
@@ -61,6 +68,7 @@ void gestor_simulacao(){
             write_log(mensagem);
             sem_post(sem_log);
         }
+        sigdelset(&block_signals, SIGINT);
     }   
 }
 
@@ -140,9 +148,36 @@ int main(void){
         exit(1);
     }
 
+    if((enviar_sinal = sem_open(SEND_SIGNAL, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+
+    if((sinal_enviado = sem_open(SIGNAL_SENT, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((terminar_server = sem_open(TERMINATE_SERVER, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((server_terminado = sem_open(SERVER_TERMINATED, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((torre_controlo_iniciada = sem_open(CONTROL_TOWER, O_CREAT, 0777, 1)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    sem_wait(torre_controlo_iniciada);
 
     time(&t_inicial);       //definir o tempo inicial, declarado em header.h
-    pid_t pid = fork();
+    pid = fork();
 
 	if(pid == 0){
 		torre_controlo();
@@ -161,17 +196,9 @@ int main(void){
         exit(1);
     } 
 
+    sem_wait(torre_controlo_iniciada);
 	gestor_simulacao();
 
     wait(NULL);
-
-    //Apagar recursos
-    //shared memory, pipe, message queue, semaforos, etc
-    sem_unlink(LOG_SEMAPHORE);
-    sem_close(sem_log);
-    sem_unlink(STATS_SEMAPHORE);
-    sem_close(sem_estatisticas);
-    unlink(PIPE_NAME);
-    close(fd_pipe);
     exit(0);
 }

@@ -51647,3 +51647,13 @@ AL TP437 init: 100 eta: 100 fuel: 10
 03:20:41 NEW COMMAND => ARRIVAL TP437 init: 100 eta: 50 fuel: 60
 03:21:27 Sou o voo TP437 criado no instante 100 ut, eta = 50 ut,fuel = 60
 03:21:27 TP437 EMERGENCY LANDING REQUESTED
+18:37:14 Gestor de simulação iniciado. Pid: 2759
+18:37:14 Torre de controlo iniciada. Pid: 2760
+18:38:30 Gestor de simulação iniciado. Pid: 2807
+18:38:30 Torre de controlo iniciada. Pid: 2808
+18:38:37 Torre de controlo iniciada. Pid: 2827
+18:38:37 Gestor de simulação iniciado. Pid: 2826
+18:38:40 Gestor de simulação iniciado. Pid: 2843
+18:38:40 Torre de controlo iniciada. Pid: 2844
+18:38:42 Gestor de simulação iniciado. Pid: 2862
+18:38:42 Torre de controlo iniciada. Pid: 2863

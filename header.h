@@ -17,10 +17,13 @@
 #include <ctype.h>
 #include <pthread.h>
 
+#define CONTROL_TOWER "/control_tower"
 #define STATS_SEMAPHORE "/stats_semaphore"
 #define LOG_SEMAPHORE "/log_semaphore"
-#define ARRIVALS_SEMAPHORE "/arrivals_semaphore"
-#define DEPARTURES_SEMAPHORE "/departures_semaphore"
+#define SERVER_TERMINATED "/server_terminated"
+#define TERMINATE_SERVER "/terminate_server"
+#define SEND_SIGNAL "/send_signal"
+#define SIGNAL_SENT "/signal_sent"
 #define SHM_STATS "/shm_stats"
 #define SHM_DEP "/shm_dep"
 #define SHM_ARR "/shm_arr"
@@ -110,7 +113,10 @@ typedef struct{
 }mensagens;
 
 //variaveis globais
+int pid;        //pid torre de controlo
 int msg_q_id;   //MESSAGE QUEUE
+int fd_pipe;    //PIPE
+int shmid_stats, shmid_dep, shmid_arr;      //SHARED MEMORY
 estatisticas_sistema * estatisticas;
 
 configuracoes gs_configuracoes;
@@ -124,6 +130,8 @@ voos_chegada fila_espera_chegadas;
 voos_partida fila_espera_partidas;
 
 pthread_cond_t is_atr_list_empty, is_prt_list_empty, check_atr, check_prt;
+pthread_t thread_criadora_partidas, thread_criadora_chegadas, thread_sinais;    //threads Gestor de simulaçao
+pthread_t thread_inicializadora, thread_msq, thread_fuel, thread_terminate;      //threads Torre de Controlo
 
 time_t t_inicial;
 
@@ -134,7 +142,13 @@ pthread_mutex_t mutex_fila_chegadas, mutex_fila_partidas;       //mutexes para a
 
 sem_t * sem_estatisticas;       //semaforo para estatisticas    
 sem_t * sem_log;                //semaforo para o log
+sem_t * enviar_sinal;           //para enviar os sinais entre processos
+sem_t * sinal_enviado;
+sem_t * terminar_server;
+sem_t * server_terminado;
+sem_t * torre_controlo_iniciada;
 char mensagem[MAX_SIZE_MSG];
+char comando[MAX_SIZE_COMANDO];
 
 //Funcoes
 int verifica_numero(char * nmr);
@@ -169,14 +183,22 @@ thread_prt adicionar_nova_prt(thread_prt thread_list, voo_partida voo);
 
 voos_partida adicionar_fila_partidas(voos_partida lista_partidas, mensagens voo_part);
 
-void adicionar_fila_chegadas(voos_chegada lista_chegadas, mensagens voo_cheg);
+void adicionar_fila_chegadas(mensagens voo_cheg);
 
-void adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_cheg);
+void adicionar_inicio(mensagens voo_cheg);
 
 voos_partida remove_partida(voos_partida head);
 
 void remove_chegada(voos_chegada head);
 
-void remove_por_id(voos_chegada head, int id);
+void remove_por_id(int id);
 
-void * decrementa_fuel(void * t);
+void * decrementa_fuel_eta(void * t);
+
+void * enviar_sinal_threads(void*t);
+
+void termination_handler(int signo);
+
+void * wait_lists (void * t);
+
+void * receber_comandos(void * t);

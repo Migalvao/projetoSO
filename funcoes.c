@@ -92,6 +92,7 @@ void * inicializar_shm(void * t){
     pthread_mutex_lock(&mutex_array_atr);
     for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++){
         array_voos_chegada[i].init = -1;
+        array_voos_chegada[i].fuel = -1;
     }
     pthread_mutex_unlock(&mutex_array_atr);
 
@@ -111,10 +112,13 @@ void * inicializar_shm(void * t){
 }
 
 void * partida(void * t){
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
+
     time_t t_criacao = ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo;
     voo_partida * dados_partida = (voo_partida *)t;
     mensagens msg;
-    char pista[3];
 
     sem_wait(sem_log);
     sprintf(mensagem, "Sou o voo %s criado no instante %ld ut,takeoff = %d", dados_partida->flight_code, t_criacao, dados_partida->takeoff);
@@ -168,29 +172,29 @@ void * partida(void * t){
     //Thread vai iniciar descolagem
     array_voos_partida[msg.id_slot_shm].takeoff = -1;
     array_voos_partida[msg.id_slot_shm].init = -1;
-    strcpy(pista, array_voos_partida[msg.id_slot_shm].pista);
+    strcpy(dados_partida->pista, array_voos_partida[msg.id_slot_shm].pista);
     pthread_mutex_unlock(&mutex_array_prt);
 
-    if(strcmp(pista, PISTA_01L) == 0)
+    if(strcmp(dados_partida->pista, PISTA_01L) == 0)
         pthread_mutex_lock(&mutex_01L);
     else
         pthread_mutex_lock(&mutex_01R);
 
     sem_wait(sem_log);
-    sprintf(mensagem, "%s DEPARTURE %s started", dados_partida->flight_code, pista);
+    sprintf(mensagem, "%s DEPARTURE %s started", dados_partida->flight_code, dados_partida->pista);
     write_log(mensagem);
     sem_post(sem_log);
 
-    usleep(gs_configuracoes.dur_descolagem * 1000);
+    usleep(gs_configuracoes.dur_descolagem * gs_configuracoes.unidade_tempo * 1000);
 
     sem_wait(sem_log);
-    sprintf(mensagem, "%s DEPARTURE %s concluded", dados_partida->flight_code, pista);
+    sprintf(mensagem, "%s DEPARTURE %s concluded", dados_partida->flight_code, dados_partida->pista);
     write_log(mensagem);
     sem_post(sem_log);
 
-    usleep(gs_configuracoes.int_descolagem * 1000);
+    usleep(gs_configuracoes.int_descolagem * gs_configuracoes.unidade_tempo * 1000);
 
-    if(strcmp(pista, PISTA_01L) == 0)
+    if(strcmp(dados_partida->pista, PISTA_01L) == 0)
         pthread_mutex_unlock(&mutex_01L);
     else
         pthread_mutex_unlock(&mutex_01R);
@@ -204,6 +208,10 @@ void * partida(void * t){
 }
 
 void * criar_partida(void * t){
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
+
     pthread_t thread_voo;
     voo_partida * dados_partida;
     time_t t_atual;        //em ut's
@@ -215,8 +223,7 @@ void * criar_partida(void * t){
         t_atual = ((time(NULL) - t_inicial) * 1000) / gs_configuracoes.unidade_tempo;       //em ut's
 
         if(t_atual < thread_list_prt->voo.init){
-            t_atual ++;
-            usleep(gs_configuracoes.unidade_tempo * 1000);
+            usleep(gs_configuracoes.unidade_tempo);
         } else {
             thread_prt atual = thread_list_prt;
             while(thread_list_prt != NULL && t_atual == thread_list_prt->voo.init){
@@ -233,15 +240,17 @@ void * criar_partida(void * t){
         }
         pthread_mutex_unlock(&mutex_list_prt);
     }
-    pthread_exit(NULL);
 }
 
 void * chegada(void * t){
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
+
     time_t t_criacao = ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo;    //em ut's
     time_t t_atual;
     voo_chegada * dados_chegada = (voo_chegada *)t;
     mensagens msg;
-    char pista[4];
 
     sem_wait(sem_log);
     sprintf(mensagem, "Sou o voo %s criado no instante %ld ut, eta = %d ut,fuel = %d", dados_chegada->flight_code, t_criacao, dados_chegada->eta, dados_chegada->fuel);
@@ -292,7 +301,7 @@ void * chegada(void * t){
     }
 
     pthread_mutex_lock(&mutex_array_atr);
-    array_voos_chegada[msg.id_slot_shm].eta = dados_chegada->eta;   //para tirar depois: deve ser a torre de controlo a colocar o eta
+    array_voos_chegada[msg.id_slot_shm].eta = dados_chegada->eta;
     array_voos_chegada[msg.id_slot_shm].fuel = dados_chegada->fuel;
     array_voos_chegada[msg.id_slot_shm].init = dados_chegada->init;
     strcpy(array_voos_chegada[msg.id_slot_shm].flight_code, dados_chegada->flight_code);
@@ -300,21 +309,17 @@ void * chegada(void * t){
 
     printf("%s Guardei os meus dados de chegada no slot %d\n", dados_chegada->flight_code,msg.id_slot_shm);
 
+    // && array_voos_chegada[msg.id_slot_shm].eta > 0
     pthread_mutex_lock(&mutex_array_atr);
-    printf("fuel: %d", array_voos_chegada[msg.id_slot_shm].fuel);
-    while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].eta > 0)
-        pthread_cond_wait(&check_atr, &mutex_array_atr);    
+    while(array_voos_chegada[msg.id_slot_shm].fuel > 0){
+        pthread_cond_wait(&check_atr, &mutex_array_atr); 
+    }
 
     if(array_voos_chegada[msg.id_slot_shm].fuel == 0){
         //thread vai terminar porque o voo foi redirecionado
         array_voos_chegada[msg.id_slot_shm].fuel = -1;
         array_voos_chegada[msg.id_slot_shm].init = -1;
         pthread_mutex_unlock(&mutex_array_atr);
-
-        //remover da fila de espera
-        pthread_mutex_lock(&mutex_fila_chegadas);
-        remove_por_id(fila_espera_chegadas, msg.id_slot_shm);
-        pthread_mutex_unlock(&mutex_fila_chegadas);
 
         sem_wait(sem_log);
         sprintf(mensagem, "%s LEAVING TO OTHER AIRPORT => FUEL = 0", dados_chegada->flight_code);
@@ -329,47 +334,53 @@ void * chegada(void * t){
         pthread_exit(NULL);
 
     } 
+    //MUDAR O IF!
+    else if(NULL){
+        //Vai iniciar aterragem
+        array_voos_chegada[msg.id_slot_shm].eta = -1;
+        array_voos_chegada[msg.id_slot_shm].init = -1;
+        strcpy(dados_chegada->pista, array_voos_chegada[msg.id_slot_shm].pista);
 
-    //Vai iniciar aterragem
-    array_voos_chegada[msg.id_slot_shm].eta = -1;
-    array_voos_chegada[msg.id_slot_shm].init = -1;
-    strcpy(pista, array_voos_chegada[msg.id_slot_shm].pista);
+        pthread_mutex_unlock(&mutex_array_atr);
 
-    pthread_mutex_unlock(&mutex_array_atr);
+        if(strcmp(dados_chegada->pista, PISTA_28L) == 0)
+            pthread_mutex_lock(&mutex_28L);
+        else
+            pthread_mutex_lock(&mutex_28R);
 
-    if(strcmp(pista, PISTA_28L) == 0)
-        pthread_mutex_lock(&mutex_28L);
-    else
-        pthread_mutex_lock(&mutex_28R);
+        sem_wait(sem_log);
+        sprintf(mensagem, "%s LANDING %s started", dados_chegada->flight_code, dados_chegada->pista);
+        write_log(mensagem);
+        sem_post(sem_log);
 
-    sem_wait(sem_log);
-    sprintf(mensagem, "%s LANDING %s started", dados_chegada->flight_code, pista);
-    write_log(mensagem);
-    sem_post(sem_log);
+        usleep(gs_configuracoes.dur_aterragem * gs_configuracoes.unidade_tempo * 1000);
 
-    usleep(gs_configuracoes.dur_aterragem * 1000);
+        sem_wait(sem_log);
+        sprintf(mensagem, "%s LANDING %s concluded", dados_chegada->flight_code, dados_chegada->pista);
+        write_log(mensagem);
+        sem_post(sem_log);
 
-    sem_wait(sem_log);
-    sprintf(mensagem, "%s LANDING %s concluded", dados_chegada->flight_code, pista);
-    write_log(mensagem);
-    sem_post(sem_log);
+        usleep(gs_configuracoes.int_aterragem * gs_configuracoes.unidade_tempo * 1000);
 
-    usleep(gs_configuracoes.int_aterragem * 1000);
+        if(strcmp(dados_chegada->pista, PISTA_28L) == 0)
+            pthread_mutex_unlock(&mutex_28L);
+        else
+            pthread_mutex_unlock(&mutex_28R);
 
-    if(strcmp(pista, PISTA_28L) == 0)
-        pthread_mutex_unlock(&mutex_28L);
-    else
-        pthread_mutex_unlock(&mutex_28R);
+        sem_wait(sem_estatisticas);
+        estatisticas->n_voos_aterrados ++;
+        sem_post(sem_estatisticas);
 
-    sem_wait(sem_estatisticas);
-    estatisticas->n_voos_aterrados ++;
-    sem_post(sem_estatisticas);
-
-    free(dados_chegada);
-    pthread_exit(NULL);
+        free(dados_chegada);
+        pthread_exit(NULL);
+    }
 }
 
 void * criar_chegada(void * t){
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
+
     pthread_t thread_voo;
     voo_chegada * dados_chegada;
     time_t t_atual;        //em ut's
@@ -381,7 +392,7 @@ void * criar_chegada(void * t){
         t_atual = ((time(NULL) - t_inicial) * 1000) / gs_configuracoes.unidade_tempo;        //em ut's
 
         if(t_atual < thread_list_atr->voo.init){
-            t_atual ++;
+            pthread_mutex_unlock(&mutex_list_atr);
             usleep(gs_configuracoes.unidade_tempo * 1000);
         } else {
             thread_atr atual = thread_list_atr;
@@ -397,11 +408,9 @@ void * criar_chegada(void * t){
                 free(thread_list_atr);
                 thread_list_atr = atual;
             }
+            pthread_mutex_unlock(&mutex_list_atr);
         }
-        pthread_mutex_unlock(&mutex_list_atr);
     }
-    pthread_create(&thread_voo, NULL, chegada,dados_chegada);
-    pthread_exit(NULL);
 }
 
 int validacao_pipe(char * comando){
@@ -573,51 +582,51 @@ voos_partida adicionar_fila_partidas(voos_partida lista_partidas, mensagens voo_
     }
 }
 
-void adicionar_fila_chegadas(voos_chegada lista_chegadas, mensagens voo_cheg){
+void adicionar_fila_chegadas(mensagens voo_cheg){
     //a lista_chegadas tem um header node cujo valor de eta é o numero de nos na lista
     voos_chegada nova_chegada= (voos_chegada)malloc(sizeof(node_chegadas));
     nova_chegada->next= NULL;
     nova_chegada->id_slot_shm = voo_cheg.id_slot_shm;
     nova_chegada->eta = voo_cheg.eta;
 
-    if(lista_chegadas->next == NULL){
-        lista_chegadas->next = nova_chegada;
-        lista_chegadas->eta = 1;
+    if(fila_espera_chegadas->next == NULL){
+        fila_espera_chegadas->next = nova_chegada;
+        fila_espera_chegadas->eta = 1;
         return;
     }
     else{
-        voos_chegada atual= lista_chegadas->next;
+        voos_chegada atual= fila_espera_chegadas->next;
         while(atual->next!=NULL){
             if(atual->next->eta >= nova_chegada->eta){
                 atual=atual->next;
             }else{
                 nova_chegada->next=atual->next;
                 atual->next=nova_chegada;
-                lista_chegadas->eta ++;
+                fila_espera_chegadas->eta ++;
                 return;
             }
         }
         atual->next=nova_chegada;
-        lista_chegadas->eta ++;
+        fila_espera_chegadas->eta ++;
         return;
     }
 }
 
-void adicionar_inicio(voos_chegada lista_prioritarios, mensagens voo_cheg){
+void adicionar_inicio(mensagens voo_cheg){
     //adicionar voo marcado como urgente, ou seja, inserir no inicio da fila/lista
     voos_chegada prioritario= (voos_chegada)malloc(sizeof(node_chegadas));
     prioritario->next=NULL;
     prioritario->id_slot_shm = voo_cheg.id_slot_shm;
     prioritario->eta = voo_cheg.eta;
 
-    if(lista_prioritarios->next == NULL){
-        lista_prioritarios->next = prioritario;
+    if(fila_espera_chegadas->next == NULL){
+        fila_espera_chegadas->next = prioritario;
     }
     else{
-        prioritario->next=lista_prioritarios->next;
-        lista_prioritarios->next=prioritario; 
+        prioritario->next=fila_espera_chegadas->next;
+        fila_espera_chegadas->next=prioritario; 
     }
-    lista_prioritarios->eta ++;
+    fila_espera_chegadas->eta ++;
     return;
 }
 
@@ -636,18 +645,28 @@ void remove_chegada(voos_chegada head){
     return;
 }
 
-void remove_por_id(voos_chegada head, int id){
-    voos_chegada atual = head->next;
-    voos_chegada anterior =  head->next;
+void remove_por_id(int id){
+    voos_chegada atual = fila_espera_chegadas->next;
 
-    while (atual->next != NULL){
+    if(id == atual->id_slot_shm && atual->next == NULL){
+        //no caso de ser logo o primeiro E a lista so ter esse elemento
+        fila_espera_chegadas->next == NULL;
+        free(atual);
+        return;
+    }
+
+    voos_chegada anterior = atual;
+    atual = atual->next;
+
+    while(atual != NULL){
         if(id == atual->id_slot_shm){
             anterior->next = atual->next;
             free(atual);
-            head->eta --;
+            fila_espera_chegadas->eta --;
             return;       
         }
-    atual= atual->next;
+        anterior = atual;
+        atual= atual->next;
     }
     printf("Erro: id nao encontrado\n");
     return;
@@ -672,6 +691,9 @@ int procura_slot_partidas(){
 }
 
 void * recebe_msq(void* t){
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
 
     mensagens voo;
 
@@ -680,16 +702,17 @@ void * recebe_msq(void* t){
             printf("ERRO a receber mensagem na torre de controlo.\n");
         if(voo.takeoff==-1){
             if(voo.msg_type==1){
-                voo.id_slot_shm= procura_slot_chegadas();
-                adicionar_inicio(fila_espera_chegadas, voo);
+                if((voo.id_slot_shm= procura_slot_chegadas()) != -1)
+                    adicionar_inicio(voo);
+
                 voo.msg_type=3;
                 if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
                     printf("ERRO a enviar mensagem.\n");
                 }
             }
             else if(voo.msg_type==2){
-                voo.id_slot_shm= procura_slot_chegadas();
-                adicionar_fila_chegadas(fila_espera_chegadas,voo);
+                if((voo.id_slot_shm= procura_slot_chegadas()) != -1)
+                    adicionar_fila_chegadas(voo);
                 voo.msg_type=3;
                 if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
                     printf("ERRO a enviar mensagem.\n");
@@ -697,8 +720,9 @@ void * recebe_msq(void* t){
             }
         }
         else{
-            voo.id_slot_shm=procura_slot_partidas();
-            adicionar_fila_partidas(fila_espera_partidas,voo);
+            if((voo.id_slot_shm=procura_slot_partidas()) != -1)
+                adicionar_fila_partidas(fila_espera_partidas, voo);
+
             voo.msg_type=3;
             if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
                printf("ERRO a enviar mensagem.\n");
@@ -707,16 +731,199 @@ void * recebe_msq(void* t){
     }
 }
 
-void * decrementa_fuel(void * t){
+void * decrementa_fuel_eta(void * t){
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
+    sem_wait(enviar_sinal);      //preparar o semaforo para enviar sinal
     while(1){
         pthread_mutex_lock(&mutex_array_atr);
+        //printf("nao chega aqui\n");
         for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++){
+            array_voos_chegada[i].eta--;
             array_voos_chegada[i].fuel--;
+            if(array_voos_chegada[i].fuel == 0){
+                //remover da fila de espera
+                pthread_mutex_lock(&mutex_fila_chegadas);
+                remove_por_id(i);
+                pthread_mutex_unlock(&mutex_fila_chegadas);
+            }
+            if(i == 0){
+                printf("fuel: %d\n", array_voos_chegada[i].fuel);
+            }
         }
-        printf("fuel-- %ld\n", ((time(NULL) - t_inicial) * 1000)/gs_configuracoes.unidade_tempo);
-        pthread_cond_broadcast(&check_atr);
+        //enviar sinal
+        sem_post(enviar_sinal);
+        //printf("TC - enviei sinal\n");
         pthread_mutex_unlock(&mutex_array_atr);
+        //Esperar pela confirmaçao
+        sem_wait(sinal_enviado);
+        //printf("TC - recebei confirmacao\n");
+        //Repor semaforos
+        sem_wait(enviar_sinal);
+        sem_post(sinal_enviado);
         usleep(gs_configuracoes.unidade_tempo * 1000);
     }
 }
 
+void * enviar_sinal_threads(void*t){
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
+    while(1){
+        sem_wait(sinal_enviado);        //preparar o semaforo para devolver o sinal
+        sem_wait(enviar_sinal);         //Esperar para receber o sinal
+        //printf("GS - recebi o sinal\n");
+        pthread_cond_broadcast(&check_atr);
+        sem_post(sinal_enviado);        //devolver o sinal
+        //printf("GS - Enviei resposta\n");
+        sem_post(enviar_sinal);         //repor o semaforo
+    }
+}
+
+void * wait_lists (void * t){
+    sem_wait(server_terminado);     //prepar o sinal a indicar que os voos acabaram todos
+    sem_wait(terminar_server);      //esperar pela indicacao que o servidor vai terminar
+    //esperar para todas os voos aterrarem e partirem
+    while((fila_espera_chegadas->next)!=NULL && (fila_espera_partidas!=NULL)){
+        usleep(gs_configuracoes.unidade_tempo * 1000);
+    }
+
+    //remover header node da fila de espera
+    free(fila_espera_chegadas);
+
+    //terminar threads do processo torre de controlo
+    pthread_cancel(thread_msq);
+    pthread_cancel(thread_fuel);
+
+    sem_post(server_terminado);     //enviar resposta a dizer que todos os voos ja terminaram
+    sem_post(terminar_server);      //teoricamente nao e preciso mas wtv
+    pthread_exit(NULL);
+}
+
+void * receber_comandos(void * t){
+    while(1){
+        char * command;
+        read(fd_pipe,comando,MAX_SIZE_COMANDO);
+        command = strtok(comando, "\n");
+        sem_wait(sem_log);
+        sprintf(mensagem, "COMMAND IGNORED => %s", command);
+        write_log(mensagem);
+        sem_post(sem_log);
+    }  
+}
+
+void termination_handler(int signo){
+    pthread_t thread_comandos;
+    sem_wait(terminar_server);
+    pthread_create(&thread_comandos, NULL, receber_comandos, NULL);
+    printf("\nServer shutting down, waiting for all flights...\n");
+
+    //esperar pelas threads criadoras de voos
+    while(thread_list_prt!=NULL && (thread_list_atr!=NULL)){
+        usleep(gs_configuracoes.unidade_tempo * 1000);
+    }
+
+    sem_post(terminar_server);      //enviar sinal para a torre de controlo terminar
+    sem_wait(server_terminado);     //esperar pela resposta
+
+    //terminar processo torre de controlo
+    kill(pid, SIGKILL);
+
+    //terminar as threads do precesso Gestor de Simulaçao
+    pthread_cancel(thread_criadora_partidas);
+    pthread_cancel(thread_criadora_chegadas);
+    pthread_cancel(thread_sinais);
+
+    //remove mutexes
+    pthread_mutex_destroy(&mutex_list_atr);
+    pthread_mutex_destroy(&mutex_list_prt);
+    pthread_mutex_destroy(&mutex_array_atr);
+    pthread_mutex_destroy(&mutex_array_prt);
+    pthread_mutex_destroy(&mutex_28L);
+    pthread_mutex_destroy(&mutex_28R);
+    pthread_mutex_destroy(&mutex_01L);
+    pthread_mutex_destroy(&mutex_01R);
+    pthread_mutex_destroy(&mutex_fila_chegadas);
+    pthread_mutex_destroy(&mutex_fila_partidas);
+
+    //remove semaforos
+    sem_unlink(LOG_SEMAPHORE);
+    sem_close(sem_log);
+    sem_unlink(STATS_SEMAPHORE);
+    sem_close(sem_estatisticas);
+    sem_unlink(SEND_SIGNAL);
+    sem_close(enviar_sinal);
+    sem_unlink(SIGNAL_SENT);
+    sem_close(sinal_enviado);
+    sem_unlink(SERVER_TERMINATED);
+    sem_close(server_terminado);
+    sem_unlink(TERMINATE_SERVER);
+    sem_close(terminar_server);
+    sem_unlink(CONTROL_TOWER);
+    sem_close(torre_controlo_iniciada);
+
+    //remove shared memory
+
+    if(munmap(array_voos_chegada, sizeof(int)) == -1){
+        perror(NULL);
+        printf("Error unmapping memory: %d\n", errno);
+        exit(1);
+    }
+        
+    close(shmid_arr);
+
+    if(shm_unlink(SHM_ARR) == -1){
+        printf("Error unlinking memory\n");
+        exit(1);
+    }
+
+
+    if(munmap(estatisticas, sizeof(int)) == -1){
+        perror(NULL);
+        printf("Error unmapping memory: %d\n", errno);
+        exit(1);
+    }
+        
+    close(shmid_stats);
+
+    if(shm_unlink(SHM_STATS) == -1){
+        printf("Error unlinking memory\n");
+        exit(1);
+    }
+
+    if(munmap(array_voos_partida, sizeof(int)) == -1){
+        perror(NULL);
+        printf("Error unmapping memory: %d\n", errno);
+        exit(1);
+    }
+        
+    close(shmid_dep);
+
+    if(shm_unlink(SHM_DEP) == -1){
+        printf("Error unlinking memory\n");
+        exit(1);
+    }
+
+    //remove message queue
+    if (msgctl(msg_q_id, IPC_RMID, NULL) == -1 ){
+        printf("Error removing message queue\n");
+        exit(1);
+    }
+    
+    //remove conditional variables
+    pthread_cond_destroy(&is_atr_list_empty);
+    pthread_cond_destroy(&is_prt_list_empty);
+    pthread_cond_destroy(&check_atr);
+    pthread_cond_destroy(&check_prt);
+    //pthread_cond_destroy(&nmr_aterragens);
+
+    //remove pipe
+    unlink(PIPE_NAME);
+    close(fd_pipe);
+ 
+    pthread_cancel(thread_comandos);
+
+    printf("Server shutting down now\n");
+    exit(0);
+}
