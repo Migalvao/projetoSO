@@ -202,3 +202,9 @@ void termination_handler(int signo);
 void * wait_lists (void * t);
 
 void * receber_comandos(void * t);
+
+void sinal_estatisticas();
+
+void swap();
+
+void ordena_ETA();

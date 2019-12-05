@@ -813,6 +813,63 @@ void * receber_comandos(void * t){
     }  
 }
 
+void ordena_ETA(){
+    int troca=0;
+    voos_chegada temp;
+    voos_chegada temp1 = NULL;
+    temp= fila_espera_chegadas;
+    
+    while(troca){
+        while (temp->next != temp1){
+            if(temp->eta > temp->next->eta){
+                swap(temp, temp->next);
+                troca=1;
+            }
+            temp=temp->next;
+        }
+        temp1=temp;
+    }
+}
+
+void swap(voos_chegada x, voos_chegada y){
+    int aux= x->eta;
+    x->eta= y->eta;
+    y->eta= aux;
+}
+
+void * holding(void *t){
+    int contador=0, max=0;
+    int holding;
+    while (1){
+        pthread_mutex_lock(&mutex_fila_chegadas);
+        if (fila_espera_chegadas->id_slot_shm >5){
+            voos_chegada atual= fila_espera_chegadas;
+            while ((atual->next!=NULL)){
+                contador++;
+                if(contador>5){
+                    holding=(rand() % (gs_configuracoes.dur_max-gs_configuracoes.dur_min+1)) + gs_configuracoes.dur_min;
+                    atual->eta+=holding;
+                    pthread_mutex_lock(&mutex_array_atr);
+                    array_voos_chegada[atual->id_slot_shm].eta+=holding;
+                    //verificar fuel e enviar sinal
+                    pthread_mutex_unlock(&mutex_array_atr);
+                    sem_wait(sem_log);
+                    sprintf(mensagem, "%s HOLDING %d", array_voos_chegada[atual->id_slot_shm].flight_code, holding);
+                    write_log(mensagem);
+                    sem_post(sem_log);
+                    if(holding>max){
+                        max=holding;
+                    }
+                }
+                atual= atual->next; 
+            }
+            ordena_ETA();
+            usleep(max*1000);
+        }
+        pthread_mutex_unlock(&mutex_fila_chegadas);
+    }
+}
+
 void termination_handler(int signo){
     pthread_t thread_comandos;
     sem_wait(terminar_server);
@@ -927,3 +984,20 @@ void termination_handler(int signo){
     printf("Server shutting down now\n");
     exit(0);
 }
+
+// void * gera_partidas_chegadas(void *){}
+
+
+void sinal_estatisticas() {
+
+    printf("Número total de voos criados: %d\n", estatisticas->n_voos_criados);
+    printf("Número total de voos arerrados: %d\n", estatisticas->n_voos_aterrados);
+    printf("Número total de voos descolados: %d\n", estatisticas->n_voos_descolados);
+    printf("Número total de voos redirecionados: %d\n", estatisticas->n_voos_redirecionados);
+    printf("Número total de voos rejeitados pela Torre de Controlo: %d\n", estatisticas->n_voos_rejeitados);
+    printf("Tempo médio de espera para aterrar: %f\n", estatisticas->tempo_medio_aterrar);
+    printf("Tempo médio de espera para descolar: %f\n", estatisticas->tempo_medio_descolar);
+    printf("Número médio de manobras de holding por voo de aterragem: %f\n", estatisticas->n_medio_holdings_aterragem);
+    printf("Número médio de manobras de holding por voo urgente: %f\n", estatisticas->n_medio_holdings_aterragem);
+    
+  }

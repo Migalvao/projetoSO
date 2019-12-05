@@ -34,18 +34,24 @@ void gestor_simulacao(){
     pthread_create(&thread_criadora_chegadas, NULL, criar_chegada, NULL);
     pthread_create(&thread_sinais, NULL, enviar_sinal_threads,NULL);        //thread que recebe um sinal de outro processo e o transmite para as threads voo
 
-    struct sigaction action;
+    struct sigaction action, act;
     action.sa_handler = termination_handler;
+    act.sa_handler = sinal_estatisticas;
     sigfillset(&action.sa_mask);        //durante o handler bloquear todos os sinais
+    sigfillset(&act.sa_mask);        //durante o handler bloquear todos os sinais
     action.sa_flags = 0;
+    act.sa_flags = 0;
+    
 
     sigaction(SIGINT, &action, NULL);
+    sigaction(SIGUSR1, &act, NULL);
 
     sigset_t block_signals;
     sigemptyset(&block_signals);
     sigfillset(&block_signals);             //bloquear TODOS os sinais
     sigdelset(&block_signals, SIGINT);      //exceto sigint
     sigprocmask (SIG_BLOCK, &block_signals, NULL);
+    sigdelset(&block_signals, SIGUSR1);
 
     sem_wait(sem_log);
     sprintf(mensagem, "Gestor de simulação iniciado. Pid: %d",getpid());
@@ -173,6 +179,7 @@ int main(void){
         printf("Error starting semaphore\n");
         exit(1);
     }
+
 
     sem_wait(torre_controlo_iniciada);
 
