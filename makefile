@@ -1,5 +1,5 @@
 CC = gcc
-FLAGS = -Wall -pthread
+FLAGS = -g -Wall -pthread
 LDFLAGS = -lrt
 OBJECTS = funcoes.o main.o
 TARGET = main

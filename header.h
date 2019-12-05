@@ -117,6 +117,7 @@ int pid;        //pid torre de controlo
 int msg_q_id;   //MESSAGE QUEUE
 int fd_pipe;    //PIPE
 int shmid_stats, shmid_dep, shmid_arr;      //SHARED MEMORY
+int running;
 estatisticas_sistema * estatisticas;
 
 configuracoes gs_configuracoes;
@@ -146,7 +147,6 @@ sem_t * enviar_sinal;           //para enviar os sinais entre processos
 sem_t * sinal_enviado;
 sem_t * terminar_server;
 sem_t * server_terminado;
-sem_t * torre_controlo_iniciada;
 char mensagem[MAX_SIZE_MSG];
 char comando[MAX_SIZE_COMANDO];
 
@@ -207,4 +207,4 @@ void sinal_estatisticas();
 
 void swap();
 
-void ordena_ETA();
+void ordena_ETA(); 

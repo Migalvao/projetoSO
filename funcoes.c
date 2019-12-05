@@ -166,8 +166,9 @@ void * partida(void * t){
     printf("%s Guardei os meus dados de partida no slot %d\n", dados_partida->flight_code, msg.id_slot_shm);
 
     pthread_mutex_lock(&mutex_array_prt);
-    while(array_voos_partida[msg.id_slot_shm].takeoff > 0)
+    while(array_voos_partida[msg.id_slot_shm].takeoff > 0){
         pthread_cond_wait(&check_prt, &mutex_array_prt);
+    }
 
     //Thread vai iniciar descolagem
     array_voos_partida[msg.id_slot_shm].takeoff = -1;
@@ -218,8 +219,14 @@ void * criar_partida(void * t){
     while(1){
 
         pthread_mutex_lock(&mutex_list_prt);
-        while(thread_list_prt == NULL)
+        while(thread_list_prt == NULL){
+            if(running != 0){
+                printf("c\n");
+                pthread_mutex_unlock(&mutex_list_prt);
+                pthread_exit(NULL);
+            }
             pthread_cond_wait(&is_prt_list_empty, &mutex_list_prt);
+        }
         t_atual = ((time(NULL) - t_inicial) * 1000) / gs_configuracoes.unidade_tempo;       //em ut's
 
         if(t_atual < thread_list_prt->voo.init){
@@ -387,8 +394,14 @@ void * criar_chegada(void * t){
     while(1){
 
         pthread_mutex_lock(&mutex_list_atr);
-        while(thread_list_atr == NULL)
+        while(thread_list_atr == NULL){
+            if(running != 0){
+                printf("s\n");
+                pthread_mutex_unlock(&mutex_list_atr);
+                pthread_exit(NULL);
+            }
             pthread_cond_wait(&is_atr_list_empty, &mutex_list_atr);
+        }
         t_atual = ((time(NULL) - t_inicial) * 1000) / gs_configuracoes.unidade_tempo;        //em ut's
 
         if(t_atual < thread_list_atr->voo.init){
@@ -735,10 +748,8 @@ void * decrementa_fuel_eta(void * t){
     sigset_t block_signals;
     sigfillset(&block_signals);
     pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
-    sem_wait(enviar_sinal);      //preparar o semaforo para enviar sinal
     while(1){
         pthread_mutex_lock(&mutex_array_atr);
-        //printf("nao chega aqui\n");
         for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++){
             array_voos_chegada[i].eta--;
             array_voos_chegada[i].fuel--;
@@ -747,21 +758,15 @@ void * decrementa_fuel_eta(void * t){
                 pthread_mutex_lock(&mutex_fila_chegadas);
                 remove_por_id(i);
                 pthread_mutex_unlock(&mutex_fila_chegadas);
+
+                sem_post(enviar_sinal);     //enviar sinal
+                sem_wait(sinal_enviado);    //esperar pela confirmacao
             }
             if(i == 0){
                 printf("fuel: %d\n", array_voos_chegada[i].fuel);
             }
         }
-        //enviar sinal
-        sem_post(enviar_sinal);
-        //printf("TC - enviei sinal\n");
         pthread_mutex_unlock(&mutex_array_atr);
-        //Esperar pela confirmaçao
-        sem_wait(sinal_enviado);
-        //printf("TC - recebei confirmacao\n");
-        //Repor semaforos
-        sem_wait(enviar_sinal);
-        sem_post(sinal_enviado);
         usleep(gs_configuracoes.unidade_tempo * 1000);
     }
 }
@@ -771,23 +776,34 @@ void * enviar_sinal_threads(void*t){
     sigfillset(&block_signals);
     pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
     while(1){
-        sem_wait(sinal_enviado);        //preparar o semaforo para devolver o sinal
         sem_wait(enviar_sinal);         //Esperar para receber o sinal
-        //printf("GS - recebi o sinal\n");
+
         pthread_cond_broadcast(&check_atr);
+
         sem_post(sinal_enviado);        //devolver o sinal
-        //printf("GS - Enviei resposta\n");
-        sem_post(enviar_sinal);         //repor o semaforo
     }
 }
 
 void * wait_lists (void * t){
-    sem_wait(server_terminado);     //prepar o sinal a indicar que os voos acabaram todos
-    sem_wait(terminar_server);      //esperar pela indicacao que o servidor vai terminar
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    pthread_sigmask (SIG_BLOCK, &block_signals, NULL);
+
+    sem_wait(terminar_server);     //esperar pela indicacao que a torre de controlo vai terminar
     //esperar para todas os voos aterrarem e partirem
+
+    pthread_mutex_lock(&mutex_fila_chegadas);
+    pthread_mutex_lock(&mutex_fila_partidas);
     while((fila_espera_chegadas->next)!=NULL && (fila_espera_partidas!=NULL)){
+        pthread_mutex_unlock(&mutex_fila_chegadas);
+        pthread_mutex_unlock(&mutex_fila_partidas);
         usleep(gs_configuracoes.unidade_tempo * 1000);
+        pthread_mutex_lock(&mutex_fila_chegadas);
+        pthread_mutex_lock(&mutex_fila_partidas);
     }
+
+    pthread_mutex_unlock(&mutex_fila_chegadas);
+    pthread_mutex_unlock(&mutex_fila_partidas);
 
     //remover header node da fila de espera
     free(fila_espera_chegadas);
@@ -796,8 +812,8 @@ void * wait_lists (void * t){
     pthread_cancel(thread_msq);
     pthread_cancel(thread_fuel);
 
-    sem_post(server_terminado);     //enviar resposta a dizer que todos os voos ja terminaram
-    sem_post(terminar_server);      //teoricamente nao e preciso mas wtv
+    sem_post(server_terminado);     //enviar sinal a indicar que a torre de controlo acabou os seus recursos
+   
     pthread_exit(NULL);
 }
 
@@ -813,12 +829,131 @@ void * receber_comandos(void * t){
     }  
 }
 
+void termination_handler(int signo){
+    pthread_t thread_comandos;
+    pthread_create(&thread_comandos, NULL, receber_comandos, NULL);
+    running = 1;
+    printf("\nServer shutting down, waiting for all flights...\n");
+
+    //esperar pelas threads criadoras de voos
+    while(thread_list_prt!=NULL && (thread_list_atr!=NULL)){
+        usleep(gs_configuracoes.unidade_tempo * 1000);
+    }
+
+    sem_post(terminar_server);          //enviar sinal para terminar a torre de controlo
+    //printf("sem - %p\n", terminar_server);
+    sem_wait(server_terminado);         //esperar pela resposta
+
+    //terminar processo torre de controlo
+    kill(pid, SIGKILL);
+
+    //terminar as threads do precesso Gestor de Simulaçao
+    pthread_cond_signal(&is_atr_list_empty);
+    pthread_cond_signal(&is_prt_list_empty);
+    pthread_cancel(thread_sinais);
+    
+    //remove mutexes
+    pthread_mutex_destroy(&mutex_list_atr);
+    pthread_mutex_destroy(&mutex_list_prt);
+    pthread_mutex_destroy(&mutex_array_atr);
+    pthread_mutex_destroy(&mutex_array_prt);
+    pthread_mutex_destroy(&mutex_28L);
+    pthread_mutex_destroy(&mutex_28R);
+    pthread_mutex_destroy(&mutex_01L);
+    pthread_mutex_destroy(&mutex_01R);
+    pthread_mutex_destroy(&mutex_fila_chegadas);
+    pthread_mutex_destroy(&mutex_fila_partidas);
+    
+    //remove semaforos
+    sem_unlink(LOG_SEMAPHORE);
+    sem_close(sem_log);
+    sem_unlink(STATS_SEMAPHORE);
+    sem_close(sem_estatisticas);
+    sem_unlink(SEND_SIGNAL);
+    sem_close(enviar_sinal);
+    sem_unlink(SIGNAL_SENT);
+    sem_close(sinal_enviado);
+    sem_unlink(SERVER_TERMINATED);
+    sem_close(server_terminado);
+
+    //remove shared memory
+    if(munmap(array_voos_chegada, gs_configuracoes.qnt_max_chegadas * sizeof(voo_chegada)) == -1){
+        perror(NULL);
+        printf("Error unmapping memory: %d\n", errno);
+        exit(1);
+    }
+        
+    close(shmid_arr);
+
+    if(shm_unlink(SHM_ARR) == -1){
+        printf("Error unlinking memory\n");
+        exit(1);
+    }
+
+   
+    if(munmap(estatisticas, sizeof(estatisticas_sistema)) == -1){
+        perror(NULL);
+        printf("Error unmapping memory: %d\n", errno);
+        exit(1);
+    }
+        
+    close(shmid_stats);
+
+    if(shm_unlink(SHM_STATS) == -1){
+        printf("Error unlinking memory\n");
+        exit(1);
+    }
+
+    if(munmap(array_voos_partida, gs_configuracoes.qnt_max_partidas * sizeof(voo_partida)) == -1){
+        perror(NULL);
+        printf("Error unmapping memory: %d\n", errno);
+        exit(1);
+    }
+        
+    close(shmid_dep);
+
+    if(shm_unlink(SHM_DEP) == -1){
+        printf("Error unlinking memory\n");
+        exit(1);
+    }
+    
+    //remove message queue
+    if (msgctl(msg_q_id, IPC_RMID, NULL) == -1 ){
+        printf("Error removing message queue\n");
+        exit(1);
+    }
+    
+    printf("1\n");
+    printf("thread %ld\n", thread_criadora_partidas);
+    if (thread_criadora_partidas != 0)
+        pthread_join(thread_criadora_chegadas, NULL);
+    //remove conditional variables
+    printf("---");
+    printf("%d\n", pthread_join(thread_criadora_partidas, NULL));
+    printf("2\n");
+    //pthread_cond_destroy(&is_atr_list_empty);
+    //pthread_cond_destroy(&is_prt_list_empty);
+    //pthread_cond_destroy(&check_atr);
+    //pthread_cond_destroy(&check_prt);
+    //pthread_cond_destroy(&nmr_aterragens);
+    printf("3\n");
+
+    //remove pipe
+    unlink(PIPE_NAME);
+    close(fd_pipe);
+ 
+    pthread_cancel(thread_comandos);
+
+    printf("Server shutting down now\n");
+    exit(0);
+}
+
 void ordena_ETA(){
     int troca=0;
     voos_chegada temp;
     voos_chegada temp1 = NULL;
     temp= fila_espera_chegadas;
-    
+
     while(troca){
         while (temp->next != temp1){
             if(temp->eta > temp->next->eta){
@@ -870,124 +1005,6 @@ void * holding(void *t){
     }
 }
 
-void termination_handler(int signo){
-    pthread_t thread_comandos;
-    sem_wait(terminar_server);
-    pthread_create(&thread_comandos, NULL, receber_comandos, NULL);
-    printf("\nServer shutting down, waiting for all flights...\n");
-
-    //esperar pelas threads criadoras de voos
-    while(thread_list_prt!=NULL && (thread_list_atr!=NULL)){
-        usleep(gs_configuracoes.unidade_tempo * 1000);
-    }
-
-    sem_post(terminar_server);      //enviar sinal para a torre de controlo terminar
-    sem_wait(server_terminado);     //esperar pela resposta
-
-    //terminar processo torre de controlo
-    kill(pid, SIGKILL);
-
-    //terminar as threads do precesso Gestor de Simulaçao
-    pthread_cancel(thread_criadora_partidas);
-    pthread_cancel(thread_criadora_chegadas);
-    pthread_cancel(thread_sinais);
-
-    //remove mutexes
-    pthread_mutex_destroy(&mutex_list_atr);
-    pthread_mutex_destroy(&mutex_list_prt);
-    pthread_mutex_destroy(&mutex_array_atr);
-    pthread_mutex_destroy(&mutex_array_prt);
-    pthread_mutex_destroy(&mutex_28L);
-    pthread_mutex_destroy(&mutex_28R);
-    pthread_mutex_destroy(&mutex_01L);
-    pthread_mutex_destroy(&mutex_01R);
-    pthread_mutex_destroy(&mutex_fila_chegadas);
-    pthread_mutex_destroy(&mutex_fila_partidas);
-
-    //remove semaforos
-    sem_unlink(LOG_SEMAPHORE);
-    sem_close(sem_log);
-    sem_unlink(STATS_SEMAPHORE);
-    sem_close(sem_estatisticas);
-    sem_unlink(SEND_SIGNAL);
-    sem_close(enviar_sinal);
-    sem_unlink(SIGNAL_SENT);
-    sem_close(sinal_enviado);
-    sem_unlink(SERVER_TERMINATED);
-    sem_close(server_terminado);
-    sem_unlink(TERMINATE_SERVER);
-    sem_close(terminar_server);
-    sem_unlink(CONTROL_TOWER);
-    sem_close(torre_controlo_iniciada);
-
-    //remove shared memory
-
-    if(munmap(array_voos_chegada, sizeof(int)) == -1){
-        perror(NULL);
-        printf("Error unmapping memory: %d\n", errno);
-        exit(1);
-    }
-        
-    close(shmid_arr);
-
-    if(shm_unlink(SHM_ARR) == -1){
-        printf("Error unlinking memory\n");
-        exit(1);
-    }
-
-
-    if(munmap(estatisticas, sizeof(int)) == -1){
-        perror(NULL);
-        printf("Error unmapping memory: %d\n", errno);
-        exit(1);
-    }
-        
-    close(shmid_stats);
-
-    if(shm_unlink(SHM_STATS) == -1){
-        printf("Error unlinking memory\n");
-        exit(1);
-    }
-
-    if(munmap(array_voos_partida, sizeof(int)) == -1){
-        perror(NULL);
-        printf("Error unmapping memory: %d\n", errno);
-        exit(1);
-    }
-        
-    close(shmid_dep);
-
-    if(shm_unlink(SHM_DEP) == -1){
-        printf("Error unlinking memory\n");
-        exit(1);
-    }
-
-    //remove message queue
-    if (msgctl(msg_q_id, IPC_RMID, NULL) == -1 ){
-        printf("Error removing message queue\n");
-        exit(1);
-    }
-    
-    //remove conditional variables
-    pthread_cond_destroy(&is_atr_list_empty);
-    pthread_cond_destroy(&is_prt_list_empty);
-    pthread_cond_destroy(&check_atr);
-    pthread_cond_destroy(&check_prt);
-    //pthread_cond_destroy(&nmr_aterragens);
-
-    //remove pipe
-    unlink(PIPE_NAME);
-    close(fd_pipe);
- 
-    pthread_cancel(thread_comandos);
-
-    printf("Server shutting down now\n");
-    exit(0);
-}
-
-// void * gera_partidas_chegadas(void *){}
-
-
 void sinal_estatisticas() {
 
     printf("Número total de voos criados: %d\n", estatisticas->n_voos_criados);
@@ -999,5 +1016,5 @@ void sinal_estatisticas() {
     printf("Tempo médio de espera para descolar: %f\n", estatisticas->tempo_medio_descolar);
     printf("Número médio de manobras de holding por voo de aterragem: %f\n", estatisticas->n_medio_holdings_aterragem);
     printf("Número médio de manobras de holding por voo urgente: %f\n", estatisticas->n_medio_holdings_aterragem);
-    
+
   }
