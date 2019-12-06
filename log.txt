@@ -51799,3 +51799,22 @@ AL TP437 init: 100 eta: 100 fuel: 10
 19:54:57 Torre de controlo iniciada. Pid: 3692
 22:49:26 Gestor de simulação iniciado. Pid: 1538
 22:49:26 Torre de controlo iniciada. Pid: 1539
+00:20:26 Gestor de simulação iniciado. Pid: 2116
+00:20:26 Torre de controlo iniciada. Pid: 2117
+00:21:02 Gestor de simulação iniciado. Pid: 2155
+00:21:02 Torre de controlo iniciada. Pid: 2156
+00:23:24 Gestor de simulação iniciado. Pid: 2193
+00:23:24 Torre de controlo iniciada. Pid: 2194
+00:23:34 Gestor de simulação iniciado. Pid: 2227
+00:23:34 Torre de controlo iniciada. Pid: 2228
+00:25:17 Gestor de simulação iniciado. Pid: 2275
+00:25:17 Torre de controlo iniciada. Pid: 2276
+00:31:44 Gestor de simulação iniciado. Pid: 2342
+00:31:44 Torre de controlo iniciada. Pid: 2343
+00:31:46 Shutdown command recieved. Waiting for all threads to finish
+00:33:14 Gestor de simulação iniciado. Pid: 2403
+00:33:14 Torre de controlo iniciada. Pid: 2404
+00:33:16 Server shutting down
+00:33:46 Gestor de simulação iniciado. Pid: 2453
+00:33:46 Torre de controlo iniciada. Pid: 2454
+00:33:49 Server shutting down

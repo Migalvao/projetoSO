@@ -221,7 +221,6 @@ void * criar_partida(void * t){
         pthread_mutex_lock(&mutex_list_prt);
         while(thread_list_prt == NULL){
             if(running != 0){
-                printf("c\n");
                 pthread_mutex_unlock(&mutex_list_prt);
                 pthread_exit(NULL);
             }
@@ -396,7 +395,6 @@ void * criar_chegada(void * t){
         pthread_mutex_lock(&mutex_list_atr);
         while(thread_list_atr == NULL){
             if(running != 0){
-                printf("s\n");
                 pthread_mutex_unlock(&mutex_list_atr);
                 pthread_exit(NULL);
             }
@@ -762,9 +760,6 @@ void * decrementa_fuel_eta(void * t){
                 sem_post(enviar_sinal);     //enviar sinal
                 sem_wait(sinal_enviado);    //esperar pela confirmacao
             }
-            if(i == 0){
-                printf("fuel: %d\n", array_voos_chegada[i].fuel);
-            }
         }
         pthread_mutex_unlock(&mutex_array_atr);
         usleep(gs_configuracoes.unidade_tempo * 1000);
@@ -832,26 +827,29 @@ void * receber_comandos(void * t){
 void termination_handler(int signo){
     pthread_t thread_comandos;
     pthread_create(&thread_comandos, NULL, receber_comandos, NULL);
-    running = 1;
-    printf("\nServer shutting down, waiting for all flights...\n");
+    running = 1;        //indicar que o servidor vai terminar
+
+    printf("\nShutdown command recieved. Waiting for all threads to finish\n");
 
     //esperar pelas threads criadoras de voos
-    while(thread_list_prt!=NULL && (thread_list_atr!=NULL)){
+    while(thread_list_prt != NULL && thread_list_atr != NULL){
         usleep(gs_configuracoes.unidade_tempo * 1000);
     }
 
     sem_post(terminar_server);          //enviar sinal para terminar a torre de controlo
-    //printf("sem - %p\n", terminar_server);
+    
     sem_wait(server_terminado);         //esperar pela resposta
 
     //terminar processo torre de controlo
     kill(pid, SIGKILL);
 
     //terminar as threads do precesso Gestor de Simulaçao
-    pthread_cond_signal(&is_atr_list_empty);
     pthread_cond_signal(&is_prt_list_empty);
+    pthread_cond_signal(&is_atr_list_empty);
+    pthread_join(thread_criadora_partidas, NULL);
+    pthread_join(thread_criadora_chegadas, NULL);
     pthread_cancel(thread_sinais);
-    
+
     //remove mutexes
     pthread_mutex_destroy(&mutex_list_atr);
     pthread_mutex_destroy(&mutex_list_prt);
@@ -923,20 +921,12 @@ void termination_handler(int signo){
         exit(1);
     }
     
-    printf("1\n");
-    printf("thread %ld\n", thread_criadora_partidas);
-    if (thread_criadora_partidas != 0)
-        pthread_join(thread_criadora_chegadas, NULL);
-    //remove conditional variables
-    printf("---");
-    printf("%d\n", pthread_join(thread_criadora_partidas, NULL));
-    printf("2\n");
-    //pthread_cond_destroy(&is_atr_list_empty);
-    //pthread_cond_destroy(&is_prt_list_empty);
-    //pthread_cond_destroy(&check_atr);
-    //pthread_cond_destroy(&check_prt);
+    //remover variaveis de condiçao
+    pthread_cond_destroy(&is_atr_list_empty);
+    pthread_cond_destroy(&is_prt_list_empty);
+    pthread_cond_destroy(&check_atr);
+    pthread_cond_destroy(&check_prt);
     //pthread_cond_destroy(&nmr_aterragens);
-    printf("3\n");
 
     //remove pipe
     unlink(PIPE_NAME);
@@ -944,7 +934,8 @@ void termination_handler(int signo){
  
     pthread_cancel(thread_comandos);
 
-    printf("Server shutting down now\n");
+    sprintf(mensagem, "Server shutting down");
+    write_log(mensagem);
     exit(0);
 }
 
@@ -973,11 +964,14 @@ void swap(voos_chegada x, voos_chegada y){
 }
 
 void * holding(void *t){
-    int contador=0, max=0;
+    int contador, max;
     int holding;
     while (1){
         pthread_mutex_lock(&mutex_fila_chegadas);
+        //adicionar CV para verificar se tem mais de 5
         if (fila_espera_chegadas->id_slot_shm >5){
+            contador = 0;
+            max = 0;
             voos_chegada atual= fila_espera_chegadas;
             while ((atual->next!=NULL)){
                 contador++;
@@ -999,7 +993,7 @@ void * holding(void *t){
                 atual= atual->next; 
             }
             ordena_ETA();
-            usleep(max*1000);
+            usleep(max * gs_configuracoes.unidade_tempo *1000);
         }
         pthread_mutex_unlock(&mutex_fila_chegadas);
     }
