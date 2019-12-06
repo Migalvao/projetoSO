@@ -2,17 +2,18 @@
 #include "header.h"
  
 void torre_controlo(){
-    struct sigaction act;
-    act.sa_handler = sinal_estatisticas;
-    sigfillset(&act.sa_mask);
-    act.sa_flags = 0;
+    int id1, id2;
+    struct sigaction action;
+    action.sa_handler = sinal_estatisticas;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
 
     sigset_t block_signals;
     sigfillset(&block_signals);
     sigdelset(&block_signals, SIGUSR1);
-    sigprocmask (SIG_BLOCK, &block_signals, NULL);
+    sigprocmask(SIG_BLOCK, &block_signals, NULL);
 
-    sigaction(SIGUSR1, &act, NULL);
+    sigaction(SIGUSR1, &action, NULL);
 
     //a lista da fila de espera de chegadas vai ter um header node que tem no eta o numero de voos a espera
     fila_espera_chegadas = (voos_chegada)malloc(sizeof(node_chegadas));
@@ -35,34 +36,37 @@ void torre_controlo(){
     sem_post(sem_log);
 
     //ESCALONAMENTO
-    pthread_mutex_lock(&mutex_28L);
-    pthread_mutex_lock(&mutex_28R);
-    pthread_mutex_lock(&mutex_01L);
-    pthread_mutex_lock(&mutex_01R);
     
     while(1){
         //  mutex
-        pthread_mutex_lock(&mutex_fila_chegadas);
 
+        pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
+        printf("ha algum voo?\n");
         if(fila_espera_chegadas->next!=NULL){
+            printf("ha um voo para aterrar!\n");
             //NAO ESTAMOS A VERIFICAR SE JA PASSOU O ETA
+            id1 = fila_espera_chegadas->next->id_slot_shm;
+            pthread_mutex_unlock(&mutex_fila_chegadas);     //fila espera
             //dar ordem para aterrar
-            pthread_mutex_lock(&mutex_array_atr);
-            array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta= 0;
-            strcpy(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].pista, PISTA_28L);
+            pthread_mutex_lock(&mutex_array_atr);       //array smh
+            array_voos_chegada[id1].eta= 0;
+            strcpy(array_voos_chegada[id1].pista, PISTA_28L);
             
-            sem_post(enviar_sinal);     //enviar sinal
+            sem_post(enviar_sinal);     //enviar notificaçao para as threads
+
             sem_wait(sinal_enviado);    //esperar pela confirmacao
 
-            pthread_mutex_unlock(&mutex_28L);
+            pthread_mutex_unlock(&mutex_array_atr);     //array shm
 
-            pthread_mutex_unlock(&mutex_array_atr);
+            sem_post(mutex_28L_start);           //pista
 
-            remove_chegada(fila_espera_chegadas);
-            pthread_mutex_unlock(&mutex_fila_chegadas);
+            pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
+            remove_chegada();
+            pthread_mutex_unlock(&mutex_fila_chegadas);         //fila espera
 
             //esperar pela aterragem acabar
-            pthread_mutex_lock(&mutex_28L);
+            printf("esperando que aterre...\n");
+            sem_wait(mutex_28L_end);
         } else{
             pthread_mutex_unlock(&mutex_fila_chegadas);
         }
@@ -71,22 +75,26 @@ void torre_controlo(){
 
         if(fila_espera_partidas!=NULL){
             //NAO ESTAMOS A VERIFICAR SE JA CHEGOU O TAKEOFF
+            id1 = fila_espera_partidas->next->id_slot_shm;
+            pthread_mutex_unlock(&mutex_fila_partidas);
+
             pthread_mutex_lock(&mutex_array_prt);
-            array_voos_partida[fila_espera_partidas->next->id_slot_shm].takeoff= 0;
-            strcpy(array_voos_partida[fila_espera_partidas->next->id_slot_shm].pista, PISTA_01L);
+            array_voos_partida[id1].takeoff= 0;
+            strcpy(array_voos_partida[id1].pista, PISTA_01L);
             
             sem_post(enviar_sinal);     //enviar sinal
             sem_wait(sinal_enviado);    //esperar pela confirmacao
 
-            pthread_mutex_unlock(&mutex_01L);
-
             pthread_mutex_unlock(&mutex_array_prt);
 
+            sem_post(mutex_01L_start);
+
+            pthread_mutex_lock(&mutex_fila_partidas);
             remove_partida(fila_espera_partidas);
             pthread_mutex_unlock(&mutex_fila_partidas);
 
             //esperar pela aterragem acabar
-            pthread_mutex_lock(&mutex_01L);
+            sem_wait(mutex_01L_end);
         } else{
             pthread_mutex_unlock(&mutex_fila_partidas);
         }
@@ -95,25 +103,22 @@ void torre_controlo(){
 }
 
 void gestor_simulacao(){
+    struct sigaction action;
+    action.sa_handler = termination_handler;
+    sigfillset(&action.sa_mask);
+    action.sa_flags = 0;
+
+    sigset_t block_signals;
+    sigfillset(&block_signals);
+    sigdelset(&block_signals, SIGINT);
+    sigprocmask(SIG_BLOCK, &block_signals, NULL);
+
+    sigaction(SIGINT, &action, NULL);
+
     char * command;
     pthread_create(&thread_criadora_partidas, NULL, criar_partida, NULL);
     pthread_create(&thread_criadora_chegadas, NULL, criar_chegada, NULL);
     pthread_create(&thread_sinais, NULL, enviar_sinal_threads,NULL);        //thread que recebe um sinal de outro processo e o transmite para as threads voo
-
-    struct sigaction action;
-    action.sa_handler = termination_handler;
-    sigfillset(&action.sa_mask);        //durante o handler bloquear todos os sinais
-    action.sa_flags = 0;
-
-    sigaction(SIGINT, &action, NULL);
-
-    sigset_t block_signals, sigint;
-    sigemptyset(&sigint);
-    sigaddset(&sigint, SIGINT);
-
-    sigfillset(&block_signals);             //bloquear TODOS os sinais
-    sigdelset(&block_signals, SIGINT);      //exceto sigint
-    sigprocmask(SIG_BLOCK, &block_signals, NULL);
 
     sem_wait(sem_log);
     sprintf(mensagem, "Gestor de simulação iniciado. Pid: %d",getpid());
@@ -122,7 +127,6 @@ void gestor_simulacao(){
 
     while(1){
         read(fd_pipe,comando,MAX_SIZE_COMANDO);
-        sigprocmask(SIG_BLOCK, &sigint, NULL);       //enquanto lida com um comando, bloqueia o SIGINT tmb
         command = strtok(comando, "\n");
         if(validacao_pipe(command) == 0){
             sem_wait(sem_log);
@@ -136,7 +140,6 @@ void gestor_simulacao(){
             write_log(mensagem);
             sem_post(sem_log);
         }
-        sigprocmask(SIG_UNBLOCK, &sigint, NULL);
     }   
 }
 
@@ -150,10 +153,6 @@ int main(void){
 	pthread_mutex_init(&mutex_list_atr, NULL);
     pthread_mutex_init(&mutex_array_atr, NULL);
     pthread_mutex_init(&mutex_array_prt, NULL);
-    pthread_mutex_init(&mutex_28L, NULL);
-    pthread_mutex_init(&mutex_28R, NULL);
-    pthread_mutex_init(&mutex_01L, NULL);
-    pthread_mutex_init(&mutex_01R, NULL);
     pthread_mutex_init(&mutex_fila_chegadas, NULL);
     pthread_mutex_init(&mutex_fila_partidas, NULL);
 	//CV's para as listas
@@ -233,6 +232,46 @@ int main(void){
     }
 
     if((server_terminado = sem_open(SERVER_TERMINATED, O_CREAT, 0777, 0)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((mutex_01L_start = sem_open(PISTA_01L, O_CREAT, 0777, 0)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((mutex_01R_start = sem_open(PISTA_01R, O_CREAT, 0777, 0)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((mutex_28L_start = sem_open(PISTA_28L, O_CREAT, 0777, 0)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((mutex_28R_start = sem_open(PISTA_28R, O_CREAT, 0777, 0)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((mutex_01L_end = sem_open(PISTA_01L2, O_CREAT, 0777, 0)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((mutex_01R_end = sem_open(PISTA_01R2, O_CREAT, 0777, 0)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((mutex_28L_end = sem_open(PISTA_28L2, O_CREAT, 0777, 0)) == SEM_FAILED){
+        printf("Error starting semaphore\n");
+        exit(1);
+    }
+
+    if((mutex_28R_end = sem_open(PISTA_28R2, O_CREAT, 0777, 0)) == SEM_FAILED){
         printf("Error starting semaphore\n");
         exit(1);
     }

@@ -1,0 +1,4 @@
+ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+DEPARTURE TP701 init: 30 takeoff: 120
+DEPARTURE TP650 init: 30 takeoff: 100
+ARRIVAL TP101 init: 40 eta: 90 fuel: 100

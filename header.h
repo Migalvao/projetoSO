@@ -35,6 +35,10 @@
 #define PISTA_28R "28R"
 #define PISTA_01L "1L"
 #define PISTA_01R "1R"
+#define PISTA_28L2 "28L2"
+#define PISTA_28R2 "28R2"
+#define PISTA_01L2 "1L2"
+#define PISTA_01R2 "1R2"
 
 
 typedef struct system_stats
@@ -138,15 +142,22 @@ time_t t_inicial;
 
 pthread_mutex_t mutex_list_atr, mutex_list_prt;                 //Mutexes para as listas de criacao de threads
 pthread_mutex_t mutex_array_atr, mutex_array_prt;               //mutexes para os arrays na shm
-pthread_mutex_t mutex_28L, mutex_28R, mutex_01L, mutex_01R;     //mutexes para as pistas
 pthread_mutex_t mutex_fila_chegadas, mutex_fila_partidas;       //mutexes para as listas de espera
 
-sem_t * sem_estatisticas;       //semaforo para estatisticas    
-sem_t * sem_log;                //semaforo para o log
-sem_t * enviar_sinal;           //para enviar os sinais entre processos
-sem_t * sinal_enviado;          //para enviar os sinais entre processos
+sem_t * sem_estatisticas;                   //semaforo para estatisticas    
+sem_t * sem_log;                            //semaforo para o log
+sem_t * enviar_sinal;                       //para enviar os sinais entre processos
+sem_t * sinal_enviado;                      //para enviar os sinais entre processos
 sem_t * terminar_server;
 sem_t * server_terminado;
+sem_t * mutex_01R_start;                          //pistas para aterrar e levantar
+sem_t * mutex_01R_end;
+sem_t * mutex_01L_start;
+sem_t * mutex_01L_end;
+sem_t * mutex_28L_start;
+sem_t * mutex_28L_end;
+sem_t * mutex_28R_start;
+sem_t * mutex_28R_end;
 char mensagem[MAX_SIZE_MSG];
 char comando[MAX_SIZE_COMANDO];
 
@@ -189,7 +200,7 @@ void adicionar_inicio(mensagens voo_cheg);
 
 voos_partida remove_partida(voos_partida head);
 
-void remove_chegada(voos_chegada head);
+void remove_chegada();
 
 void remove_por_id(int id);
 
