@@ -144,7 +144,7 @@ pthread_mutex_t mutex_fila_chegadas, mutex_fila_partidas;       //mutexes para a
 sem_t * sem_estatisticas;       //semaforo para estatisticas    
 sem_t * sem_log;                //semaforo para o log
 sem_t * enviar_sinal;           //para enviar os sinais entre processos
-sem_t * sinal_enviado;
+sem_t * sinal_enviado;          //para enviar os sinais entre processos
 sem_t * terminar_server;
 sem_t * server_terminado;
 char mensagem[MAX_SIZE_MSG];
@@ -207,4 +207,4 @@ void sinal_estatisticas();
 
 void swap();
 
-void ordena_ETA(); 
+void ordena_ETA();

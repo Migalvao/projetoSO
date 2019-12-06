@@ -34,9 +34,64 @@ void torre_controlo(){
     write_log(mensagem);
     sem_post(sem_log);
 
-    pthread_join(thread_msq, NULL);
-    pthread_join(thread_fuel, NULL);
-    exit(0);
+    //ESCALONAMENTO
+    pthread_mutex_lock(&mutex_28L);
+    pthread_mutex_lock(&mutex_28R);
+    pthread_mutex_lock(&mutex_01L);
+    pthread_mutex_lock(&mutex_01R);
+    
+    while(1){
+        //  mutex
+        pthread_mutex_lock(&mutex_fila_chegadas);
+
+        if(fila_espera_chegadas->next!=NULL){
+            //NAO ESTAMOS A VERIFICAR SE JA PASSOU O ETA
+            //dar ordem para aterrar
+            pthread_mutex_lock(&mutex_array_atr);
+            array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta= 0;
+            strcpy(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].pista, PISTA_28L);
+            
+            sem_post(enviar_sinal);     //enviar sinal
+            sem_wait(sinal_enviado);    //esperar pela confirmacao
+
+            pthread_mutex_unlock(&mutex_28L);
+
+            pthread_mutex_unlock(&mutex_array_atr);
+
+            remove_chegada(fila_espera_chegadas);
+            pthread_mutex_unlock(&mutex_fila_chegadas);
+
+            //esperar pela aterragem acabar
+            pthread_mutex_lock(&mutex_28L);
+        } else{
+            pthread_mutex_unlock(&mutex_fila_chegadas);
+        }
+
+        pthread_mutex_lock(&mutex_fila_partidas);
+
+        if(fila_espera_partidas!=NULL){
+            //NAO ESTAMOS A VERIFICAR SE JA CHEGOU O TAKEOFF
+            pthread_mutex_lock(&mutex_array_prt);
+            array_voos_partida[fila_espera_partidas->next->id_slot_shm].takeoff= 0;
+            strcpy(array_voos_partida[fila_espera_partidas->next->id_slot_shm].pista, PISTA_01L);
+            
+            sem_post(enviar_sinal);     //enviar sinal
+            sem_wait(sinal_enviado);    //esperar pela confirmacao
+
+            pthread_mutex_unlock(&mutex_01L);
+
+            pthread_mutex_unlock(&mutex_array_prt);
+
+            remove_partida(fila_espera_partidas);
+            pthread_mutex_unlock(&mutex_fila_partidas);
+
+            //esperar pela aterragem acabar
+            pthread_mutex_lock(&mutex_01L);
+        } else{
+            pthread_mutex_unlock(&mutex_fila_partidas);
+        }
+        usleep(gs_configuracoes.unidade_tempo*1000);
+    }
 }
 
 void gestor_simulacao(){
@@ -44,8 +99,6 @@ void gestor_simulacao(){
     pthread_create(&thread_criadora_partidas, NULL, criar_partida, NULL);
     pthread_create(&thread_criadora_chegadas, NULL, criar_chegada, NULL);
     pthread_create(&thread_sinais, NULL, enviar_sinal_threads,NULL);        //thread que recebe um sinal de outro processo e o transmite para as threads voo
-
-    printf("thread thread_criadora_partidas %ld\n", thread_criadora_partidas);
 
     struct sigaction action;
     action.sa_handler = termination_handler;

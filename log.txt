@@ -51818,3 +51818,44 @@ AL TP437 init: 100 eta: 100 fuel: 10
 00:33:46 Gestor de simulação iniciado. Pid: 2453
 00:33:46 Torre de controlo iniciada. Pid: 2454
 00:33:49 Server shutting down
+00:34:51 Gestor de simulação iniciado. Pid: 2487
+00:34:51 Torre de controlo iniciada. Pid: 2488
+00:34:53 Server shutting down
+00:40:44 Gestor de simulação iniciado. Pid: 2569
+00:40:44 Torre de controlo iniciada. Pid: 2570
+00:41:48 Server shutting down
+01:17:29 Gestor de simulação iniciado. Pid: 2798
+01:17:29 Torre de controlo iniciada. Pid: 2799
+01:17:54 Server shutting down
+01:53:53 Gestor de simulação iniciado. Pid: 1365
+01:53:53 Torre de controlo iniciada. Pid: 1366
+01:54:01 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 20 fuel: 100
+01:54:03 Sou o voo TP437 criado no instante 20 ut, eta = 20 ut,fuel = 100
+02:05:05 Gestor de simulação iniciado. Pid: 1589
+02:05:05 Torre de controlo iniciada. Pid: 1590
+02:05:21 NEW COMMAND => ARRIVAL TP437 init: 40 eta: 20 fuel: 100
+02:05:25 Sou o voo TP437 criado no instante 40 ut, eta = 20 ut,fuel = 100
+02:12:36 Gestor de simulação iniciado. Pid: 1729
+02:12:36 Torre de controlo iniciada. Pid: 1730
+02:13:06 Server shutting down
+02:13:09 Gestor de simulação iniciado. Pid: 1769
+02:13:09 Torre de controlo iniciada. Pid: 1770
+02:13:58 Server shutting down
+02:14:13 Gestor de simulação iniciado. Pid: 1816
+02:14:13 Torre de controlo iniciada. Pid: 1817
+02:14:29 NEW COMMAND => ARRIVAL TP437 init: 40 eta: 20 fuel: 100
+02:14:33 Sou o voo TP437 criado no instante 40 ut, eta = 20 ut,fuel = 100
+02:14:33 TP437 LANDING 28L started
+02:14:43 TP437 LANDING 28L concluded
+02:15:06 Server shutting down
+02:16:46 Gestor de simulação iniciado. Pid: 1888
+02:16:46 Torre de controlo iniciada. Pid: 1889
+02:16:49 NEW COMMAND => ARRIVAL TP437 init: 40 eta: 20 fuel: 100
+02:17:06 Sou o voo TP437 criado no instante 40 ut, eta = 20 ut,fuel = 100
+02:21:50 Gestor de simulação iniciado. Pid: 1987
+02:21:50 Torre de controlo iniciada. Pid: 1988
+02:21:56 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 20 fuel: 100
+02:22:00 Sou o voo TP437 criado no instante 20 ut, eta = 20 ut,fuel = 100
+02:22:00 TP437 LANDING 28L started
+02:22:10 TP437 LANDING 28L concluded
+02:22:49 Server shutting down

@@ -315,9 +315,9 @@ void * chegada(void * t){
 
     printf("%s Guardei os meus dados de chegada no slot %d\n", dados_chegada->flight_code,msg.id_slot_shm);
 
-    // && array_voos_chegada[msg.id_slot_shm].eta > 0
     pthread_mutex_lock(&mutex_array_atr);
-    while(array_voos_chegada[msg.id_slot_shm].fuel > 0){
+    while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].eta != 0){
+        //esta verificacao pode correr mal se ao mm tempo um voo ficar com fuel = 0 e este tiver eta = 0
         pthread_cond_wait(&check_atr, &mutex_array_atr); 
     }
 
@@ -340,11 +340,12 @@ void * chegada(void * t){
         pthread_exit(NULL);
 
     } 
-    //MUDAR O IF!
-    else if(NULL){
+    
+    else if(array_voos_chegada[msg.id_slot_shm].eta == 0){
         //Vai iniciar aterragem
         array_voos_chegada[msg.id_slot_shm].eta = -1;
         array_voos_chegada[msg.id_slot_shm].init = -1;
+        array_voos_chegada[msg.id_slot_shm].fuel = -1;
         strcpy(dados_chegada->pista, array_voos_chegada[msg.id_slot_shm].pista);
 
         pthread_mutex_unlock(&mutex_array_atr);
@@ -753,12 +754,17 @@ void * decrementa_fuel_eta(void * t){
             array_voos_chegada[i].fuel--;
             if(array_voos_chegada[i].fuel == 0){
                 //remover da fila de espera
+                printf("oi\n");
                 pthread_mutex_lock(&mutex_fila_chegadas);
+                printf("omg chegou aqui\n");
                 remove_por_id(i);
                 pthread_mutex_unlock(&mutex_fila_chegadas);
 
                 sem_post(enviar_sinal);     //enviar sinal
                 sem_wait(sinal_enviado);    //esperar pela confirmacao
+            }
+            if(i == 0){
+                printf("time: %d\n", - array_voos_chegada[i].fuel);
             }
         }
         pthread_mutex_unlock(&mutex_array_atr);
@@ -774,6 +780,7 @@ void * enviar_sinal_threads(void*t){
         sem_wait(enviar_sinal);         //Esperar para receber o sinal
 
         pthread_cond_broadcast(&check_atr);
+        pthread_cond_broadcast(&check_prt);
 
         sem_post(sinal_enviado);        //devolver o sinal
     }
