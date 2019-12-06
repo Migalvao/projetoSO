@@ -39,23 +39,24 @@ void torre_controlo(){
     
     while(1){
         //  mutex
-
+        if(running != 0){
+            pthread_join(thread_terminate, NULL);
+            exit(0);
+        }
         pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
-        printf("ha algum voo?\n");
         if(fila_espera_chegadas->next!=NULL){
-            printf("ha um voo para aterrar!\n");
             //NAO ESTAMOS A VERIFICAR SE JA PASSOU O ETA
             id1 = fila_espera_chegadas->next->id_slot_shm;
             pthread_mutex_unlock(&mutex_fila_chegadas);     //fila espera
             //dar ordem para aterrar
             pthread_mutex_lock(&mutex_array_atr);       //array smh
-            array_voos_chegada[id1].eta= 0;
+            array_voos_chegada[id1].aterrar= 1;
+            //ATUALIZAR ESTATISTICAS
             strcpy(array_voos_chegada[id1].pista, PISTA_28L);
-            
+
             sem_post(enviar_sinal);     //enviar notificaçao para as threads
 
             sem_wait(sinal_enviado);    //esperar pela confirmacao
-
             pthread_mutex_unlock(&mutex_array_atr);     //array shm
 
             sem_post(mutex_28L_start);           //pista
@@ -65,7 +66,6 @@ void torre_controlo(){
             pthread_mutex_unlock(&mutex_fila_chegadas);         //fila espera
 
             //esperar pela aterragem acabar
-            printf("esperando que aterre...\n");
             sem_wait(mutex_28L_end);
         } else{
             pthread_mutex_unlock(&mutex_fila_chegadas);

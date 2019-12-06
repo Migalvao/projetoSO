@@ -52119,3 +52119,85 @@ AL TP437 init: 100 eta: 100 fuel: 10
 21:12:18 Torre de controlo iniciada. Pid: 1952
 21:12:25 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
 21:12:28 Sou o voo TP437 criado no instante 20 ut, eta = 100 ut,fuel = 1000
+21:51:56 Gestor de simulação iniciado. Pid: 2286
+21:51:56 Torre de controlo iniciada. Pid: 2287
+21:51:58 Server shutting down
+21:52:04 Gestor de simulação iniciado. Pid: 2308
+21:52:04 Torre de controlo iniciada. Pid: 2309
+21:52:06 Server shutting down
+21:52:13 Gestor de simulação iniciado. Pid: 2330
+21:52:13 Torre de controlo iniciada. Pid: 2331
+21:52:17 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+21:52:23 Sou o voo TP437 criado no instante 20 ut, eta = 100 ut,fuel = 1000
+21:55:55 Gestor de simulação iniciado. Pid: 2426
+21:55:55 Torre de controlo iniciada. Pid: 2427
+21:55:58 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+21:56:05 Sou o voo TP437 criado no instante 20 ut, eta = 100 ut,fuel = 1000
+21:56:05 TP437 LANDING 28L started
+21:56:15 TP437 LANDING 28L concluded
+21:56:40 COMMAND IGNORED => ARRIVAL TP437 init: 80 eta: 100 fuel: 1000
+21:56:45 WRONG COMMAND => ARRIVAL TP437 init: 80 eta: 100 fuel: 1000
+21:56:51 COMMAND IGNORED => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+21:56:53 WRONG COMMAND => ARRIVAL TP437 init: 100 eta: 100 fuel: 1000
+21:57:02 COMMAND IGNORED => ARRIVAL TP437 init: 150 eta: 100 fuel: 1000
+21:57:03 COMMAND IGNORED => ARRIVAL TP437 init: 150 eta: 100 fuel: 1000
+21:57:04 NEW COMMAND => ARRIVAL TP437 init: 150 eta: 100 fuel: 1000
+21:57:05 COMMAND IGNORED => ARRIVAL TP437 init: 150 eta: 100 fuel: 1000
+21:57:05 NEW COMMAND => ARRIVAL TP437 init: 150 eta: 100 fuel: 1000
+21:57:10 Sou o voo TP437 criado no instante 150 ut, eta = 100 ut,fuel = 1000
+21:57:10 Sou o voo TP437 criado no instante 150 ut, eta = 100 ut,fuel = 1000
+21:57:10 TP437 LANDING 28L started
+21:57:20 TP437 LANDING 28L concluded
+21:57:25 TP437 LANDING 28L started
+21:57:35 TP437 LANDING 28L concluded
+21:57:46 Server shutting down
+21:57:53 Gestor de simulação iniciado. Pid: 2532
+21:57:53 Torre de controlo iniciada. Pid: 2533
+21:58:00 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+21:58:03 Sou o voo TP437 criado no instante 20 ut, eta = 100 ut,fuel = 1000
+22:10:18 Gestor de simulação iniciado. Pid: 2759
+22:10:18 Torre de controlo iniciada. Pid: 2760
+22:10:22 COMMAND IGNORED => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+22:10:24 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+22:10:28 Sou o voo TP437 criado no instante 20 ut, eta = 100 ut,fuel = 1000
+22:10:28 TP437 LANDING 28L started
+22:10:38 TP437 LANDING 28L concluded
+22:10:46 Server shutting down
+22:10:47 Gestor de simulação iniciado. Pid: 2805
+22:10:47 Torre de controlo iniciada. Pid: 2806
+22:10:50 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 100 fuel: 1000
+22:10:57 Sou o voo TP437 criado no instante 20 ut, eta = 100 ut,fuel = 1000
+22:10:57 TP437 LANDING 28L started
+22:11:03 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+22:11:07 TP437 LANDING 28L concluded
+22:11:09 NEW COMMAND => ARRIVAL TP437 init: 80 eta: 100 fuel: 1000
+22:11:12 Sou o voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+22:11:13 TP437 LANDING 28L started
+22:11:23 TP437 LANDING 28L concluded
+22:11:27 Server shutting down
+22:14:55 Gestor de simulação iniciado. Pid: 2897
+22:14:55 Torre de controlo iniciada. Pid: 2898
+22:14:59 NEW COMMAND => ARRIVAL TP437 init: 80 eta: 100 fuel: 1000
+22:15:35 Sou o voo TP437 criado no instante 80 ut, eta = 100 ut,fuel = 1000
+22:21:34 Gestor de simulação iniciado. Pid: 3014
+22:21:34 Torre de controlo iniciada. Pid: 3015
+22:21:37 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+22:21:49 Sou o voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
+22:27:01 Gestor de simulação iniciado. Pid: 3112
+22:27:01 Torre de controlo iniciada. Pid: 3113
+22:27:03 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+22:27:16 Sou o voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
+22:28:56 Gestor de simulação iniciado. Pid: 3206
+22:28:56 Torre de controlo iniciada. Pid: 3207
+22:28:59 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+22:29:11 Sou o voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
+22:30:22 Gestor de simulação iniciado. Pid: 3297
+22:30:22 Torre de controlo iniciada. Pid: 3298
+22:30:24 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+22:30:37 Sou o voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
+22:32:26 Gestor de simulação iniciado. Pid: 3407
+22:32:26 Torre de controlo iniciada. Pid: 3408
+22:32:29 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+22:32:41 Sou o voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
+22:32:41 TP437 LANDING 28L started
+22:32:41 Server shutting down

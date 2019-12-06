@@ -70,7 +70,8 @@ typedef struct arrival_flight{
 	char flight_code[10], pista[4];
 	int init,
 		eta,
-        fuel;        
+        fuel,
+        aterrar;        
 } voo_chegada;
 
 typedef struct departure_flight{

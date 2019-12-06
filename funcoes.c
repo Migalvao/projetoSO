@@ -93,6 +93,7 @@ void * inicializar_shm(void * t){
     for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++){
         array_voos_chegada[i].init = -1;
         array_voos_chegada[i].fuel = -1;
+        array_voos_chegada[i].aterrar = 0;
     }
     pthread_mutex_unlock(&mutex_array_atr);
 
@@ -315,8 +316,7 @@ void * chegada(void * t){
     printf("%s Guardei os meus dados de chegada no slot %d\n", dados_chegada->flight_code,msg.id_slot_shm);
 
     pthread_mutex_lock(&mutex_array_atr);
-    while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].eta != 0){
-        //esta verificacao pode correr mal se ao mm tempo um voo ficar com fuel = 0 e este tiver eta = 0
+    while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].aterrar == 0){
         pthread_cond_wait(&check_atr, &mutex_array_atr); 
     }
 
@@ -340,9 +340,9 @@ void * chegada(void * t){
 
     } 
     
-    else if(array_voos_chegada[msg.id_slot_shm].eta == 0){
+    else if(array_voos_chegada[msg.id_slot_shm].aterrar == 1){
         //Vai iniciar aterragem
-        array_voos_chegada[msg.id_slot_shm].eta = -1;
+        array_voos_chegada[msg.id_slot_shm].aterrar = 0;
         array_voos_chegada[msg.id_slot_shm].init = -1;
         array_voos_chegada[msg.id_slot_shm].fuel = -1;
         strcpy(dados_chegada->pista, array_voos_chegada[msg.id_slot_shm].pista);
@@ -708,6 +708,10 @@ void * recebe_msq(void* t){
     while(1){
         if(msgrcv(msg_q_id, &voo, sizeof(mensagens)-sizeof(long), -2, 0)==-1)
             printf("ERRO a receber mensagem na torre de controlo.\n");
+        if(voo.id_slot_shm == -10){
+            pthread_exit(NULL);
+        }
+
         if(voo.takeoff==-1){
             //CHEGADAS
             if(voo.msg_type==1){
@@ -757,6 +761,9 @@ void * recebe_msq(void* t){
 
 void * decrementa_fuel_eta(void * t){
     while(1){
+        if(running != 0){
+            pthread_exit(NULL);
+        }
         pthread_mutex_lock(&mutex_array_atr);
         for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++){
             array_voos_chegada[i].eta--;
@@ -786,6 +793,9 @@ void * enviar_sinal_threads(void*t){
 
     while(1){
         sem_wait(enviar_sinal);         //Esperar para receber o sinal
+        if(running != 0){
+            pthread_exit(NULL);
+        }
 
         pthread_cond_broadcast(&check_atr);
         pthread_cond_broadcast(&check_prt);
@@ -795,12 +805,11 @@ void * enviar_sinal_threads(void*t){
 }
 
 void * wait_lists (void * t){
-
     sem_wait(terminar_server);     //esperar pela indicacao que a torre de controlo vai terminar
     //esperar para todas os voos aterrarem e partirem
     pthread_mutex_lock(&mutex_fila_chegadas);
     pthread_mutex_lock(&mutex_fila_partidas);
-    while((fila_espera_chegadas->next)!=NULL && (fila_espera_partidas!=NULL)){
+    while((fila_espera_chegadas->next)!=NULL || (fila_espera_partidas!=NULL)){
         pthread_mutex_unlock(&mutex_fila_chegadas);
         pthread_mutex_unlock(&mutex_fila_partidas);
         usleep(gs_configuracoes.unidade_tempo * 1000);
@@ -811,12 +820,19 @@ void * wait_lists (void * t){
     pthread_mutex_unlock(&mutex_fila_chegadas);
     pthread_mutex_unlock(&mutex_fila_partidas);
 
+
+
     //remover header node da fila de espera
     free(fila_espera_chegadas);
     
     //terminar threads do processo torre de controlo
-    pthread_cancel(thread_msq);
-    pthread_cancel(thread_fuel);
+    mensagens end;
+    end.msg_type = 1;
+    end.id_slot_shm = -10;
+    msgsnd(msg_q_id, &end, sizeof(mensagens)-sizeof(long),0);
+    pthread_join(thread_msq, NULL);
+    running = 1;
+    pthread_join(thread_fuel, NULL);
 
     sem_post(server_terminado);     //enviar sinal a indicar que a torre de controlo acabou os seus recursos
    
@@ -832,24 +848,21 @@ void * receber_comandos(void * t){
         char * command;
         read(fd_pipe,comando,MAX_SIZE_COMANDO);
         command = strtok(comando, "\n");
-        sem_wait(sem_log);
         sprintf(mensagem, "COMMAND IGNORED => %s", command);
         write_log(mensagem);
-        sem_post(sem_log);
     }  
 }
 
 void termination_handler(int signo){
     pthread_t thread_comandos;
     pthread_create(&thread_comandos, NULL, receber_comandos, NULL);
-    running = 1;        //indicar que o servidor vai terminar
 
     printf("\nShutdown command recieved. Waiting for all threads to finish\n");
 
     //esperar pelas threads criadoras de voos
     pthread_mutex_lock(&mutex_list_atr);
     pthread_mutex_lock(&mutex_list_prt);
-    while(thread_list_prt != NULL && thread_list_atr != NULL){
+    while(thread_list_prt != NULL || thread_list_atr != NULL){
         pthread_mutex_unlock(&mutex_list_atr);
         pthread_mutex_unlock(&mutex_list_prt);
         usleep(gs_configuracoes.unidade_tempo * 1000);
@@ -860,10 +873,8 @@ void termination_handler(int signo){
     sem_post(terminar_server);          //enviar sinal para terminar a torre de controlo
     
     sem_wait(server_terminado);         //esperar pela resposta
-
-    //terminar processo torre de controlo
-    kill(pid, SIGKILL);
     
+    running = 1;        //indicar que o servidor vai terminar
     //terminar as threads do precesso Gestor de Simulaçao
     pthread_cond_signal(&is_prt_list_empty);
     pthread_cond_signal(&is_atr_list_empty);
@@ -871,7 +882,8 @@ void termination_handler(int signo){
     pthread_mutex_unlock(&mutex_list_prt);
     pthread_join(thread_criadora_partidas, NULL);
     pthread_join(thread_criadora_chegadas, NULL);
-    pthread_cancel(thread_sinais);
+    sem_post(enviar_sinal);
+    pthread_join(thread_sinais,NULL);
 
     //remove mutexes
     pthread_mutex_destroy(&mutex_list_atr);
@@ -892,6 +904,8 @@ void termination_handler(int signo){
     sem_close(sinal_enviado);
     sem_unlink(SERVER_TERMINATED);
     sem_close(server_terminado);
+    sem_unlink(TERMINATE_SERVER);
+    sem_close(terminar_server);
     sem_unlink(PISTA_01L);
     sem_close(mutex_01L_start);
     sem_unlink(PISTA_01R);
@@ -961,7 +975,6 @@ void termination_handler(int signo){
     pthread_cond_destroy(&is_prt_list_empty);
     pthread_cond_destroy(&check_atr);
     pthread_cond_destroy(&check_prt);
-    //pthread_cond_destroy(&nmr_aterragens);
 
     //remove pipe
     unlink(PIPE_NAME);
