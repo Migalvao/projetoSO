@@ -40,19 +40,21 @@ void torre_controlo(){
     
     while(1){
         if(running != 0){
-            pthread_join(thread_terminate, NULL);
+            sem_post(terminar_server);                  //avisar a thread_terminate que pode terminar
+            pthread_join(thread_terminate, NULL);       //esperar que termine
             exit(0);
         }
         //ARRIVALS
         pthread_mutex_lock(&mutex_array_atr);               //array smh
         pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
+        if(fila_espera_chegadas->next != NULL){
+            //printf("ha um voo para aterrar, eta = %d\n", array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta);
+        }
         if(fila_espera_chegadas->next!=NULL && array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta <= 0){
             id1 = fila_espera_chegadas->next->id_slot_shm;
-
+            id2 = -1;
             if(fila_espera_chegadas->next->next!=NULL && array_voos_chegada[fila_espera_chegadas->next->next->id_slot_shm].eta <= 0){
                 id2 = fila_espera_chegadas->next->next->id_slot_shm;
-            } else {
-                id2 = -1;
             }
             pthread_mutex_unlock(&mutex_fila_chegadas);     //fila espera
 
@@ -222,7 +224,7 @@ int main(void){
 	pthread_cond_init(&is_atr_list_empty, NULL);
     pthread_cond_init(&check_atr, NULL);
     pthread_cond_init(&check_prt, NULL);
-
+    pthread_cond_init(&nmr_aterragens, NULL);
 
     //MESSAGE QUEUE
     if ((msg_q_id= msgget(IPC_PRIVATE,IPC_CREAT | 0700))==-1){

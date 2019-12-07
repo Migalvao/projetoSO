@@ -135,7 +135,7 @@ voo_chegada * array_voos_chegada;       //array de chegadas na shm
 voos_chegada fila_espera_chegadas;
 voos_partida fila_espera_partidas;
 
-pthread_cond_t is_atr_list_empty, is_prt_list_empty, check_atr, check_prt;
+pthread_cond_t is_atr_list_empty, is_prt_list_empty, check_atr, check_prt, nmr_aterragens;
 pthread_t thread_criadora_partidas, thread_criadora_chegadas, thread_sinais;    //threads Gestor de simulaçao
 pthread_t thread_inicializadora, thread_msq, thread_fuel, thread_terminate;      //threads Torre de Controlo
 
