@@ -93,7 +93,7 @@ void * inicializar_shm(void * t){
     for(int i=0; i < gs_configuracoes.qnt_max_chegadas; i++){
         array_voos_chegada[i].init = -1;
         array_voos_chegada[i].fuel = -1;
-        array_voos_chegada[i].aterrar = 0;
+        array_voos_chegada[i].instrucao = 0;
     }
     pthread_mutex_unlock(&mutex_array_atr);
 
@@ -316,11 +316,11 @@ void * chegada(void * t){
     printf("%s Guardei os meus dados de chegada no slot %d\n", dados_chegada->flight_code,msg.id_slot_shm);
 
     pthread_mutex_lock(&mutex_array_atr);
-    while(array_voos_chegada[msg.id_slot_shm].fuel > 0 && array_voos_chegada[msg.id_slot_shm].aterrar == 0){
+    while(array_voos_chegada[msg.id_slot_shm].instrucao == 0){
         pthread_cond_wait(&check_atr, &mutex_array_atr); 
     }
 
-    if(array_voos_chegada[msg.id_slot_shm].fuel == 0){
+    if(array_voos_chegada[msg.id_slot_shm].instrucao == 2){
         //thread vai terminar porque o voo foi redirecionado
         array_voos_chegada[msg.id_slot_shm].fuel = -1;
         array_voos_chegada[msg.id_slot_shm].init = -1;
@@ -340,9 +340,9 @@ void * chegada(void * t){
 
     } 
     
-    else if(array_voos_chegada[msg.id_slot_shm].aterrar == 1){
+    else if(array_voos_chegada[msg.id_slot_shm].instrucao == 1){
         //Vai iniciar aterragem
-        array_voos_chegada[msg.id_slot_shm].aterrar = 0;
+        array_voos_chegada[msg.id_slot_shm].instrucao = 0;
         array_voos_chegada[msg.id_slot_shm].init = -1;
         array_voos_chegada[msg.id_slot_shm].fuel = -1;
         strcpy(dados_chegada->pista, array_voos_chegada[msg.id_slot_shm].pista);
@@ -597,27 +597,30 @@ void adicionar_fila_chegadas(mensagens voo_cheg){
     voos_chegada nova_chegada= (voos_chegada)malloc(sizeof(node_chegadas));
     nova_chegada->next= NULL;
     nova_chegada->id_slot_shm = voo_cheg.id_slot_shm;
-    nova_chegada->eta = voo_cheg.eta;
 
     if(fila_espera_chegadas->next == NULL){
         fila_espera_chegadas->next = nova_chegada;
-        fila_espera_chegadas->eta = 1;
+        fila_espera_chegadas->id_slot_shm = 1;
         return;
     }
     else{
         voos_chegada atual= fila_espera_chegadas->next;
         while(atual->next!=NULL){
-            if(atual->next->eta >= nova_chegada->eta){
+            pthread_mutex_lock(&mutex_array_atr);
+            if(array_voos_chegada[atual->next->id_slot_shm].eta >= array_voos_chegada[nova_chegada->id_slot_shm].eta){
                 atual=atual->next;
+                pthread_mutex_unlock(&mutex_array_atr);
             }else{
+                pthread_mutex_unlock(&mutex_array_atr);
                 nova_chegada->next=atual->next;
                 atual->next=nova_chegada;
-                fila_espera_chegadas->eta ++;
+                fila_espera_chegadas->id_slot_shm ++;
                 return;
             }
+
         }
         atual->next=nova_chegada;
-        fila_espera_chegadas->eta ++;
+        fila_espera_chegadas->id_slot_shm ++;
         return;
     }
 }
@@ -627,7 +630,6 @@ void adicionar_inicio(mensagens voo_cheg){
     voos_chegada prioritario= (voos_chegada)malloc(sizeof(node_chegadas));
     prioritario->next=NULL;
     prioritario->id_slot_shm = voo_cheg.id_slot_shm;
-    prioritario->eta = voo_cheg.eta;
 
     if(fila_espera_chegadas->next == NULL){
         fila_espera_chegadas->next = prioritario;
@@ -636,7 +638,7 @@ void adicionar_inicio(mensagens voo_cheg){
         prioritario->next=fila_espera_chegadas->next;
         fila_espera_chegadas->next=prioritario; 
     }
-    fila_espera_chegadas->eta ++;
+    fila_espera_chegadas->id_slot_shm ++;
     return;
 }
 
@@ -650,7 +652,7 @@ voos_partida remove_partida(voos_partida head){
 void remove_chegada(){
     voos_chegada aux = fila_espera_chegadas->next;
     fila_espera_chegadas->next= fila_espera_chegadas->next->next;
-    fila_espera_chegadas->eta --;
+    fila_espera_chegadas->id_slot_shm --;
     if(fila_espera_chegadas->next == NULL){
         printf("nao ha mais nng na fila\n");
     }
@@ -675,7 +677,7 @@ void remove_por_id(int id){
         if(id == atual->id_slot_shm){
             anterior->next = atual->next;
             free(atual);
-            fila_espera_chegadas->eta --;
+            fila_espera_chegadas->id_slot_shm --;
             return;       
         }
         anterior = atual;
@@ -714,32 +716,14 @@ void * recebe_msq(void* t){
 
         if(voo.takeoff==-1){
             //CHEGADAS
-            if(voo.msg_type==1){
-                //URGENTES
-                if((voo.id_slot_shm= procura_slot_chegadas()) != -1){
-                    printf("aqui?\n");
-                    pthread_mutex_lock(&mutex_fila_chegadas);
-                    adicionar_inicio(voo);
-                    pthread_mutex_unlock(&mutex_fila_chegadas);
-                }
-
-                voo.msg_type=3;
-                if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
-                    printf("ERRO a enviar mensagem.\n");
-                }
+            if((voo.id_slot_shm= procura_slot_chegadas()) != -1){
+                pthread_mutex_lock(&mutex_fila_chegadas);
+                adicionar_fila_chegadas(voo);
+                pthread_mutex_unlock(&mutex_fila_chegadas);
             }
-            else if(voo.msg_type==2){
-                //NAO URGENTES
-                if((voo.id_slot_shm= procura_slot_chegadas()) != -1){
-                    printf("vou adicionar a fila de chegadas\n");
-                    pthread_mutex_lock(&mutex_fila_chegadas);
-                    adicionar_fila_chegadas(voo);
-                    pthread_mutex_unlock(&mutex_fila_chegadas);
-                }
-                voo.msg_type=3;
-                if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
-                    printf("ERRO a enviar mensagem.\n");
-                }
+            voo.msg_type=3;
+            if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
+                printf("ERRO a enviar mensagem.\n");
             }
         }
         else{
@@ -769,6 +753,9 @@ void * decrementa_fuel_eta(void * t){
             array_voos_chegada[i].eta--;
             array_voos_chegada[i].fuel--;
             if(array_voos_chegada[i].fuel == 0){
+                //instrucao para desviar o voo
+                array_voos_chegada[i].instrucao = 2;
+
                 //remover da fila de espera
                 pthread_mutex_lock(&mutex_fila_chegadas);
                 remove_por_id(i);
@@ -991,11 +978,11 @@ void ordena_ETA(){
     int troca=0;
     voos_chegada temp;
     voos_chegada temp1 = NULL;
-    temp= fila_espera_chegadas;
+    temp= fila_espera_chegadas->next;
 
     while(troca){
         while (temp->next != temp1){
-            if(temp->eta > temp->next->eta){
+            if(array_voos_chegada[temp->id_slot_shm].eta > array_voos_chegada[temp->next->id_slot_shm].eta){
                 swap(temp, temp->next);
                 troca=1;
             }
@@ -1006,9 +993,9 @@ void ordena_ETA(){
 }
 
 void swap(voos_chegada x, voos_chegada y){
-    int aux= x->eta;
-    x->eta= y->eta;
-    y->eta= aux;
+    int aux= array_voos_chegada[x->id_slot_shm].eta;
+    array_voos_chegada[x->id_slot_shm].eta= array_voos_chegada[y->id_slot_shm].eta;
+    array_voos_chegada[y->id_slot_shm].eta= aux;
 }
 
 void * holding(void *t){
@@ -1024,23 +1011,41 @@ void * holding(void *t){
             while ((atual->next!=NULL)){
                 contador++;
                 if(contador>5){
-                    holding=(rand() % (gs_configuracoes.dur_max-gs_configuracoes.dur_min+1)) + gs_configuracoes.dur_min;
-                    atual->eta+=holding;
+                    //dados_chegada->fuel > (4 + dados_chegada->eta + gs_configuracoes.dur_aterragem
                     pthread_mutex_lock(&mutex_array_atr);
-                    array_voos_chegada[atual->id_slot_shm].eta+=holding;
-                    //verificar fuel e enviar sinal
-                    pthread_mutex_unlock(&mutex_array_atr);
+                    //SE for prioritario, nao tem holding
+                    if(array_voos_chegada[atual->id_slot_shm].fuel <= (4 + array_voos_chegada[atual->id_slot_shm].eta + gs_configuracoes.dur_aterragem)){
+                        atual = atual->next;
+                        pthread_mutex_unlock(&mutex_array_atr);
+                        continue;
+                    }
+                    holding=(rand() % (gs_configuracoes.dur_max-gs_configuracoes.dur_min+1)) + gs_configuracoes.dur_min;
+                    
+                    //SE o holding fizer com que o fuel chegue ao fim antes de chegar ao aeroporto
+                    if(array_voos_chegada[atual->id_slot_shm].fuel - holding - array_voos_chegada[atual->id_slot_shm].eta <= 0){
+                        atual = atual->next;
+                        sem_post(enviar_sinal);
+                        sem_wait(sinal_enviado);
+                        pthread_mutex_unlock(&mutex_array_atr);
+                        continue;
+                    }
+                    array_voos_chegada[atual->id_slot_shm].eta += holding;
+
                     sem_wait(sem_log);
                     sprintf(mensagem, "%s HOLDING %d", array_voos_chegada[atual->id_slot_shm].flight_code, holding);
                     write_log(mensagem);
                     sem_post(sem_log);
+
+                    pthread_mutex_unlock(&mutex_array_atr);
                     if(holding>max){
                         max=holding;
                     }
                 }
                 atual= atual->next; 
             }
+            pthread_mutex_lock(&mutex_array_atr);
             ordena_ETA();
+            pthread_mutex_unlock(&mutex_array_atr);
             usleep(max * gs_configuracoes.unidade_tempo *1000);
         }
         pthread_mutex_unlock(&mutex_fila_chegadas);

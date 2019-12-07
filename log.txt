@@ -52201,3 +52201,15 @@ AL TP437 init: 100 eta: 100 fuel: 10
 22:32:41 Sou o voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
 22:32:41 TP437 LANDING 28L started
 22:32:41 Server shutting down
+02:20:41 Gestor de simulação iniciado. Pid: 4572
+02:20:41 Torre de controlo iniciada. Pid: 4573
+02:20:44 NEW COMMAND => ARRIVAL TP437 init: 20 eta: 40 fuel: 100
+02:20:51 Sou o voo TP437 criado no instante 20 ut, eta = 40 ut,fuel = 100
+02:21:11 TP437 LANDING 28L started
+02:21:21 TP437 LANDING 28L concluded
+02:22:02 WRONG COMMAND => DEPARTURE TP37 init: 150 takeoff: 190
+02:22:07 Server shutting down
+02:22:40 Gestor de simulação iniciado. Pid: 4636
+02:22:40 Torre de controlo iniciada. Pid: 4637
+02:22:42 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+02:22:55 Sou o voo TP37 criado no instante 30 ut,takeoff = 40

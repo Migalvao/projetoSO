@@ -71,7 +71,7 @@ typedef struct arrival_flight{
 	int init,
 		eta,
         fuel,
-        aterrar;        
+        instrucao;        
 } voo_chegada;
 
 typedef struct departure_flight{
@@ -107,7 +107,7 @@ typedef struct no_fila_chegada *  voos_chegada;
 
 typedef struct no_fila_chegada{
     voos_chegada next;
-    int id_slot_shm, eta;
+    int id_slot_shm;
 }node_chegadas;
 
 typedef struct{

@@ -3,6 +3,7 @@
  
 void torre_controlo(){
     int id1, id2;
+    time_t t_atual;
     struct sigaction action;
     action.sa_handler = sinal_estatisticas;
     sigemptyset(&action.sa_mask);
@@ -17,7 +18,7 @@ void torre_controlo(){
 
     //a lista da fila de espera de chegadas vai ter um header node que tem no eta o numero de voos a espera
     fila_espera_chegadas = (voos_chegada)malloc(sizeof(node_chegadas));
-    fila_espera_chegadas->eta = 0;
+    fila_espera_chegadas->id_slot_shm = 0;
     fila_espera_chegadas->next = NULL;
     fila_espera_partidas = NULL;
 
@@ -38,21 +39,39 @@ void torre_controlo(){
     //ESCALONAMENTO
     
     while(1){
-        //  mutex
         if(running != 0){
             pthread_join(thread_terminate, NULL);
             exit(0);
         }
+        id2 = -1;
+        pthread_mutex_lock(&mutex_array_atr);               //array smh
         pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
-        if(fila_espera_chegadas->next!=NULL){
-            //NAO ESTAMOS A VERIFICAR SE JA PASSOU O ETA
+        if(fila_espera_chegadas->next!=NULL && array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta <= 0){
             id1 = fila_espera_chegadas->next->id_slot_shm;
+            //atualizar estatisticas
+            sem_wait(sem_estatisticas);
+            estatisticas->n_voos_aterrados ++;
+            estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
+            sem_post(sem_estatisticas);
+
+            if(fila_espera_chegadas->next->next!=NULL && array_voos_chegada[fila_espera_chegadas->next->next->id_slot_shm].eta <= 0){
+                id2 = fila_espera_chegadas->next->next->id_slot_shm;
+                //atualizar estatisticas
+                sem_wait(sem_estatisticas);
+                estatisticas->n_voos_aterrados ++;
+                estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
+                sem_post(sem_estatisticas);
+            }
             pthread_mutex_unlock(&mutex_fila_chegadas);     //fila espera
-            //dar ordem para aterrar
-            pthread_mutex_lock(&mutex_array_atr);       //array smh
-            array_voos_chegada[id1].aterrar= 1;
-            //ATUALIZAR ESTATISTICAS
+
+            //dar ordem para aterrar e indicar a pista
+            array_voos_chegada[id1].instrucao= 1;
             strcpy(array_voos_chegada[id1].pista, PISTA_28L);
+
+            if(id2 != -1){
+                array_voos_chegada[id2].instrucao= 1;
+                strcpy(array_voos_chegada[id2].pista, PISTA_28R);
+            }
 
             sem_post(enviar_sinal);     //enviar notificaçao para as threads
 
@@ -60,26 +79,57 @@ void torre_controlo(){
             pthread_mutex_unlock(&mutex_array_atr);     //array shm
 
             sem_post(mutex_28L_start);           //pista
+            if(id2 != -1){
+                sem_post(mutex_28R_start);
+            }
 
-            pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
+            pthread_mutex_lock(&mutex_fila_chegadas);
             remove_chegada();
-            pthread_mutex_unlock(&mutex_fila_chegadas);         //fila espera
+            pthread_mutex_unlock(&mutex_fila_chegadas);
 
-            //esperar pela aterragem acabar
+            if(id2 != -1){
+                pthread_mutex_lock(&mutex_fila_chegadas);
+                remove_chegada();
+                pthread_mutex_unlock(&mutex_fila_chegadas);
+            }
+
+            //esperar pelas pistas ficarem livres
             sem_wait(mutex_28L_end);
+            if(id2 != -1){
+                sem_wait(mutex_28R_end);
+            }
         } else{
             pthread_mutex_unlock(&mutex_fila_chegadas);
+            pthread_mutex_unlock(&mutex_array_atr);
         }
 
         pthread_mutex_lock(&mutex_fila_partidas);
 
-        if(fila_espera_partidas!=NULL){
-            //NAO ESTAMOS A VERIFICAR SE JA CHEGOU O TAKEOFF
-            id1 = fila_espera_partidas->next->id_slot_shm;
+        if(fila_espera_partidas!=NULL && (fila_espera_partidas->takeoff <= t_atual)){
+            id1 = fila_espera_partidas->id_slot_shm;    
+            if(fila_espera_partidas->next !=NULL && (fila_espera_partidas->next->takeoff <= t_atual)){
+                id2= fila_espera_partidas->next->id_slot_shm;
+            }  else
+                id2=-2;            
             pthread_mutex_unlock(&mutex_fila_partidas);
 
             pthread_mutex_lock(&mutex_array_prt);
+            if(id2!=-2){
+                array_voos_partida[id2].takeoff= 0;
+            }
             array_voos_partida[id1].takeoff= 0;
+
+            sem_wait(sem_estatisticas);
+            if (id2!=2){
+                estatisticas->n_voos_descolados++;
+                estatisticas->tempo_medio_descolar= (estatisticas->tempo_medio_descolar * (estatisticas->n_voos_descolados-1) + (t_atual - fila_espera_partidas->next->takeoff)) / (estatisticas->n_voos_descolados); 
+            }
+            estatisticas->n_voos_descolados++;
+            estatisticas->tempo_medio_descolar= (estatisticas->tempo_medio_descolar * (estatisticas->n_voos_descolados-1) + (t_atual - fila_espera_partidas->takeoff)) / (estatisticas->n_voos_descolados); 
+            sem_post(sem_estatisticas);
+            if(id2!=-2){
+                strcpy(array_voos_partida[id2].pista, PISTA_01R);
+            }
             strcpy(array_voos_partida[id1].pista, PISTA_01L);
             
             sem_post(enviar_sinal);     //enviar sinal
@@ -88,15 +138,22 @@ void torre_controlo(){
             pthread_mutex_unlock(&mutex_array_prt);
 
             sem_post(mutex_01L_start);
-
+            sem_post(mutex_01R_start);
+            
             pthread_mutex_lock(&mutex_fila_partidas);
+            if(id2!=-2){
+                remove_partida(fila_espera_partidas);
+            }
             remove_partida(fila_espera_partidas);
             pthread_mutex_unlock(&mutex_fila_partidas);
 
             //esperar pela aterragem acabar
             sem_wait(mutex_01L_end);
-        } else{
-            pthread_mutex_unlock(&mutex_fila_partidas);
+            if(id2!=-2){
+                sem_wait(mutex_01R_end);
+            }
+        }else{
+            pthread_mutex_unlock(&mutex_fila_partidas);     
         }
         usleep(gs_configuracoes.unidade_tempo*1000);
     }
