@@ -48,19 +48,9 @@ void torre_controlo(){
         pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
         if(fila_espera_chegadas->next!=NULL && array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta <= 0){
             id1 = fila_espera_chegadas->next->id_slot_shm;
-            //atualizar estatisticas
-            sem_wait(sem_estatisticas);
-            estatisticas->n_voos_aterrados ++;
-            estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
-            sem_post(sem_estatisticas);
 
             if(fila_espera_chegadas->next->next!=NULL && array_voos_chegada[fila_espera_chegadas->next->next->id_slot_shm].eta <= 0){
                 id2 = fila_espera_chegadas->next->next->id_slot_shm;
-                //atualizar estatisticas
-                sem_wait(sem_estatisticas);
-                estatisticas->n_voos_aterrados ++;
-                estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
-                sem_post(sem_estatisticas);
             } else {
                 id2 = -1;
             }
@@ -85,6 +75,21 @@ void torre_controlo(){
                 sem_post(mutex_28R_start);
             }
 
+            //esperar pelas pistas ficarem livres
+            sem_wait(mutex_28L_end);
+            if(id2 != -1){
+                sem_wait(mutex_28R_end);
+            }
+            //atualizar estatisticas
+            sem_wait(sem_estatisticas);
+            estatisticas->n_voos_aterrados ++;
+            estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
+            if(id1 != -1){
+                estatisticas->n_voos_aterrados ++;
+                estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
+            }
+            sem_post(sem_estatisticas);
+
             pthread_mutex_lock(&mutex_fila_chegadas);
             remove_chegada();
             pthread_mutex_unlock(&mutex_fila_chegadas);
@@ -95,11 +100,7 @@ void torre_controlo(){
                 pthread_mutex_unlock(&mutex_fila_chegadas);
             }
 
-            //esperar pelas pistas ficarem livres
-            sem_wait(mutex_28L_end);
-            if(id2 != -1){
-                sem_wait(mutex_28R_end);
-            }
+
         } else{
             pthread_mutex_unlock(&mutex_fila_chegadas);
             pthread_mutex_unlock(&mutex_array_atr);
@@ -121,14 +122,7 @@ void torre_controlo(){
                 array_voos_partida[id2].takeoff= 0;
             }
             array_voos_partida[id1].takeoff= 0;
-            sem_wait(sem_estatisticas);
-            if (id2 != -2){
-                estatisticas->n_voos_descolados++;
-                estatisticas->tempo_medio_descolar= (estatisticas->tempo_medio_descolar * (estatisticas->n_voos_descolados-1) + (t_atual - fila_espera_partidas->next->takeoff)) / (estatisticas->n_voos_descolados); 
-            }
-            estatisticas->n_voos_descolados++;
-            estatisticas->tempo_medio_descolar= (estatisticas->tempo_medio_descolar * (estatisticas->n_voos_descolados-1) + (t_atual - fila_espera_partidas->takeoff)) / (estatisticas->n_voos_descolados); 
-            sem_post(sem_estatisticas);
+            
             if(id2!=-2){
                 strcpy(array_voos_partida[id2].pista, PISTA_01R);
             }
@@ -141,18 +135,28 @@ void torre_controlo(){
             sem_post(mutex_01L_start);
             sem_post(mutex_01R_start);
             
-            pthread_mutex_lock(&mutex_fila_partidas);
-            if(id2!=-2){
-                remove_partida(fila_espera_partidas);
-            }
-            fila_espera_partidas = remove_partida(fila_espera_partidas);
-            pthread_mutex_unlock(&mutex_fila_partidas);
-            printf("3\n");
             //esperar pela aterragem acabar
             sem_wait(mutex_01L_end);
             if(id2!=-2){
                 sem_wait(mutex_01R_end);
             }
+
+            sem_wait(sem_estatisticas);
+            if (id2 != -2){
+                estatisticas->n_voos_descolados++;
+                estatisticas->tempo_medio_descolar= (estatisticas->tempo_medio_descolar * (estatisticas->n_voos_descolados-1) + (t_atual - fila_espera_partidas->next->takeoff)) / (estatisticas->n_voos_descolados); 
+            }
+            estatisticas->n_voos_descolados++;
+            estatisticas->tempo_medio_descolar= (estatisticas->tempo_medio_descolar * (estatisticas->n_voos_descolados-1) + (t_atual - fila_espera_partidas->takeoff)) / (estatisticas->n_voos_descolados); 
+            sem_post(sem_estatisticas);
+
+            pthread_mutex_lock(&mutex_fila_partidas);
+            if(id2!=-2){
+                fila_espera_partidas = remove_partida(fila_espera_partidas);
+            }
+            fila_espera_partidas = remove_partida(fila_espera_partidas);
+            pthread_mutex_unlock(&mutex_fila_partidas);
+
         }else{
             pthread_mutex_unlock(&mutex_fila_partidas);     
         }

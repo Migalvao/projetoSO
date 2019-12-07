@@ -201,10 +201,6 @@ void * partida(void * t){
     else
         sem_post(mutex_01R_end);
 
-    sem_wait(sem_estatisticas);
-    estatisticas->n_voos_descolados ++;
-    sem_post(sem_estatisticas);
-
     free(dados_partida);
     pthread_exit(NULL);
 }
@@ -374,10 +370,6 @@ void * chegada(void * t){
             sem_post(mutex_28L_end);
         else
             sem_post(mutex_28R_end);
-
-        sem_wait(sem_estatisticas);
-        estatisticas->n_voos_aterrados ++;
-        sem_post(sem_estatisticas);
 
         free(dados_chegada);
         pthread_exit(NULL);
@@ -716,11 +708,13 @@ void * recebe_msq(void* t){
 
         if(voo.takeoff==-1){
             //CHEGADAS
+            pthread_mutex_lock(&mutex_array_atr);
             if((voo.id_slot_shm= procura_slot_chegadas()) != -1){
                 pthread_mutex_lock(&mutex_fila_chegadas);
                 adicionar_fila_chegadas(voo);
                 pthread_mutex_unlock(&mutex_fila_chegadas);
             }
+            pthread_mutex_unlock(&mutex_array_atr);
             voo.msg_type=3;
             if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
                 printf("ERRO a enviar mensagem.\n");
@@ -728,11 +722,13 @@ void * recebe_msq(void* t){
         }
         else{
             //PARTIDAS
+            pthread_mutex_lock(&mutex_array_prt);
             if((voo.id_slot_shm=procura_slot_partidas()) != -1){
                 pthread_mutex_lock(&mutex_fila_partidas);
                 fila_espera_partidas = adicionar_fila_partidas(fila_espera_partidas, voo);
                 pthread_mutex_unlock(&mutex_fila_partidas);
             }
+            pthread_mutex_unlock(&mutex_array_prt);
 
             voo.msg_type=3;
             if(msgsnd(msg_q_id, &voo, sizeof(mensagens)-sizeof(long),0)==-1){
