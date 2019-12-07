@@ -43,7 +43,7 @@ void torre_controlo(){
             pthread_join(thread_terminate, NULL);
             exit(0);
         }
-        id2 = -1;
+        //ARRIVALS
         pthread_mutex_lock(&mutex_array_atr);               //array smh
         pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
         if(fila_espera_chegadas->next!=NULL && array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta <= 0){
@@ -61,6 +61,8 @@ void torre_controlo(){
                 estatisticas->n_voos_aterrados ++;
                 estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
                 sem_post(sem_estatisticas);
+            } else {
+                id2 = -1;
             }
             pthread_mutex_unlock(&mutex_fila_chegadas);     //fila espera
 
@@ -103,8 +105,9 @@ void torre_controlo(){
             pthread_mutex_unlock(&mutex_array_atr);
         }
 
+        //DEPARTURES
+        t_atual = ((time(NULL) - t_inicial) * 1000) / gs_configuracoes.unidade_tempo;
         pthread_mutex_lock(&mutex_fila_partidas);
-
         if(fila_espera_partidas!=NULL && (fila_espera_partidas->takeoff <= t_atual)){
             id1 = fila_espera_partidas->id_slot_shm;    
             if(fila_espera_partidas->next !=NULL && (fila_espera_partidas->next->takeoff <= t_atual)){
@@ -118,9 +121,8 @@ void torre_controlo(){
                 array_voos_partida[id2].takeoff= 0;
             }
             array_voos_partida[id1].takeoff= 0;
-
             sem_wait(sem_estatisticas);
-            if (id2!=2){
+            if (id2 != -2){
                 estatisticas->n_voos_descolados++;
                 estatisticas->tempo_medio_descolar= (estatisticas->tempo_medio_descolar * (estatisticas->n_voos_descolados-1) + (t_atual - fila_espera_partidas->next->takeoff)) / (estatisticas->n_voos_descolados); 
             }
@@ -134,7 +136,6 @@ void torre_controlo(){
             
             sem_post(enviar_sinal);     //enviar sinal
             sem_wait(sinal_enviado);    //esperar pela confirmacao
-
             pthread_mutex_unlock(&mutex_array_prt);
 
             sem_post(mutex_01L_start);
@@ -144,9 +145,9 @@ void torre_controlo(){
             if(id2!=-2){
                 remove_partida(fila_espera_partidas);
             }
-            remove_partida(fila_espera_partidas);
+            fila_espera_partidas = remove_partida(fila_espera_partidas);
             pthread_mutex_unlock(&mutex_fila_partidas);
-
+            printf("3\n");
             //esperar pela aterragem acabar
             sem_wait(mutex_01L_end);
             if(id2!=-2){

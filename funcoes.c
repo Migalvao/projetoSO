@@ -240,6 +240,8 @@ void * criar_partida(void * t){
                 pthread_create(&thread_voo, NULL, partida, dados_partida);
                 //Remove da lista o que ja foi criado e passa para o seguinte
                 atual = thread_list_prt->next;
+                if(atual == NULL)
+                    printf("ja nao ha mais a criar\n");
                 free(thread_list_prt);
                 thread_list_prt = atual;
             }
@@ -574,6 +576,7 @@ voos_partida adicionar_fila_partidas(voos_partida lista_partidas, mensagens voo_
 
     if(lista_partidas==NULL){
         lista_partidas= nova_partida;
+        printf("estava vazia e ja nao esta\n");
         return lista_partidas;
     }
     else{
@@ -653,9 +656,6 @@ void remove_chegada(){
     voos_chegada aux = fila_espera_chegadas->next;
     fila_espera_chegadas->next= fila_espera_chegadas->next->next;
     fila_espera_chegadas->id_slot_shm --;
-    if(fila_espera_chegadas->next == NULL){
-        printf("nao ha mais nng na fila\n");
-    }
     free(aux);
     return;
 }
@@ -729,9 +729,8 @@ void * recebe_msq(void* t){
         else{
             //PARTIDAS
             if((voo.id_slot_shm=procura_slot_partidas()) != -1){
-                printf("nao devia estar aqui\n");
                 pthread_mutex_lock(&mutex_fila_partidas);
-                adicionar_fila_partidas(fila_espera_partidas, voo);
+                fila_espera_partidas = adicionar_fila_partidas(fila_espera_partidas, voo);
                 pthread_mutex_unlock(&mutex_fila_partidas);
             }
 

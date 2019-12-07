@@ -52213,3 +52213,55 @@ AL TP437 init: 100 eta: 100 fuel: 10
 02:22:40 Torre de controlo iniciada. Pid: 4637
 02:22:42 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
 02:22:55 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+02:35:41 Gestor de simulação iniciado. Pid: 4767
+02:35:41 Torre de controlo iniciada. Pid: 4768
+02:35:45 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+02:35:56 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+02:46:07 Gestor de simulação iniciado. Pid: 4987
+02:46:07 Torre de controlo iniciada. Pid: 4988
+02:46:19 Server shutting down
+02:46:38 Gestor de simulação iniciado. Pid: 5070
+02:46:38 Torre de controlo iniciada. Pid: 5071
+02:46:42 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+02:46:53 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+02:51:54 Gestor de simulação iniciado. Pid: 5179
+02:51:54 Torre de controlo iniciada. Pid: 5180
+02:52:01 Server shutting down
+02:52:07 Gestor de simulação iniciado. Pid: 5240
+02:52:07 Torre de controlo iniciada. Pid: 5241
+02:52:12 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+02:52:22 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+02:56:21 Gestor de simulação iniciado. Pid: 5362
+02:56:21 Torre de controlo iniciada. Pid: 5363
+02:56:24 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+02:56:36 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+03:01:59 Gestor de simulação iniciado. Pid: 5525
+03:01:59 Torre de controlo iniciada. Pid: 5526
+03:02:07 Server shutting down
+03:02:23 Gestor de simulação iniciado. Pid: 5588
+03:02:23 Torre de controlo iniciada. Pid: 5589
+03:02:26 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+03:02:38 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+03:08:42 Gestor de simulação iniciado. Pid: 5734
+03:08:42 Torre de controlo iniciada. Pid: 5735
+03:08:45 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+03:08:57 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+03:12:49 Gestor de simulação iniciado. Pid: 5867
+03:12:49 Torre de controlo iniciada. Pid: 5868
+03:12:52 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+03:13:04 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+03:15:22 Gestor de simulação iniciado. Pid: 5982
+03:15:22 Torre de controlo iniciada. Pid: 5983
+03:15:24 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+03:15:37 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+03:22:30 Gestor de simulação iniciado. Pid: 6112
+03:22:30 Torre de controlo iniciada. Pid: 6113
+03:22:34 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+03:22:45 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+03:23:37 Gestor de simulação iniciado. Pid: 6215
+03:23:37 Torre de controlo iniciada. Pid: 6216
+03:23:42 NEW COMMAND => DEPARTURE TP37 init: 30 takeoff: 40
+03:23:52 Sou o voo TP37 criado no instante 30 ut,takeoff = 40
+03:23:57 TP37 DEPARTURE 1L started
+03:24:12 TP37 DEPARTURE 1L concluded
+03:24:18 Server shutting down
