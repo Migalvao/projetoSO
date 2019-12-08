@@ -1,3 +1,5 @@
+//Miguel Galvão-2018278986 Sofia Silva- 2018293871 
+
 #include "header.h"
 
 int verifica_numero(char * nmr){
@@ -105,6 +107,7 @@ void * inicializar_shm(void * t){
     pthread_mutex_lock(&mutex_array_prt);   
     for(int i=0; i < gs_configuracoes.qnt_max_partidas; i++){
         array_voos_partida[i].init = -1;
+        array_voos_partida[i].takeoff = -1;
     }
     pthread_mutex_unlock(&mutex_array_prt);
 
@@ -258,6 +261,7 @@ void * criar_partida(void * t){
                 atual = thread_list_prt->next;
                 free(thread_list_prt);
                 thread_list_prt = atual;
+                pthread_cond_signal(&is_prt_list_empty);        //caso o servidor esteja a terminar, vai verificar se todas as threads foram criadas
             }
         }
         pthread_mutex_unlock(&mutex_list_prt);
@@ -429,6 +433,7 @@ void * criar_chegada(void * t){
                 atual = thread_list_atr->next;
                 free(thread_list_atr);
                 thread_list_atr = atual;
+                pthread_cond_signal(&is_atr_list_empty);        //caso o servidor esteja a terminar, vai verificar se todas as threads foram criadas
             }
             pthread_mutex_unlock(&mutex_list_atr);
         }
@@ -833,17 +838,18 @@ void * wait_lists (void * t){
     sem_wait(terminar_server);     //esperar pela indicacao que a torre de controlo vai terminar
     int flag = 0;           //Usado para saber se  
 
-    //esperar para todas os voos aterrarem e partirem
+    //esperar por todas as aterragens, caso haja
     pthread_mutex_lock(&mutex_fila_chegadas);
-    pthread_mutex_lock(&mutex_fila_partidas);
-    while((fila_espera_chegadas->next)!=NULL || (fila_espera_partidas!=NULL)){
-        pthread_mutex_unlock(&mutex_fila_chegadas);
-        pthread_mutex_unlock(&mutex_fila_partidas);
-        usleep(gs_configuracoes.unidade_tempo * 1000);
-        pthread_mutex_lock(&mutex_fila_chegadas);
-        pthread_mutex_lock(&mutex_fila_partidas);
+    while(fila_espera_chegadas->next != NULL){
+        pthread_cond_wait(&is_atr_list_empty, &mutex_fila_chegadas);
     }
     pthread_mutex_unlock(&mutex_fila_chegadas);
+
+    //esperar por todas as partidas, caso haja
+    pthread_mutex_lock(&mutex_fila_partidas);
+    while(fila_espera_partidas != NULL){
+        pthread_cond_wait(&is_prt_list_empty, &mutex_fila_partidas);
+    }
     pthread_mutex_unlock(&mutex_fila_partidas);
 
     //remover header node da fila de espera
@@ -885,16 +891,21 @@ void termination_handler(int signo){
 
     printf("\nShutdown command recieved. Waiting for all threads to finish\n");
 
-    //esperar pelas threads criadoras de voos
-    pthread_mutex_lock(&mutex_list_atr);
+    //esperar pela thread criadora de partidas
     pthread_mutex_lock(&mutex_list_prt);
-    while(thread_list_prt != NULL || thread_list_atr != NULL){
-        pthread_mutex_unlock(&mutex_list_atr);
-        pthread_mutex_unlock(&mutex_list_prt);
-        usleep(gs_configuracoes.unidade_tempo * 1000);
-        pthread_mutex_lock(&mutex_list_atr);
-        pthread_mutex_lock(&mutex_list_prt);
+    while(thread_list_prt != NULL){
+        pthread_cond_wait(&is_prt_list_empty, &mutex_list_prt);
     }
+    pthread_mutex_unlock(&mutex_list_prt);
+
+    //esperar pela thread criadora de chegadas
+    pthread_mutex_lock(&mutex_list_atr);
+    while(thread_list_atr != NULL){
+        pthread_cond_wait(&is_atr_list_empty, &mutex_list_atr);
+    }
+    pthread_mutex_unlock(&mutex_list_atr);
+
+    usleep(gs_configuracoes.unidade_tempo * 1000);      //dar um tempo para a thread comunicar com a torre de controlo
 
     sem_post(terminar_server);          //enviar notificaçao para a torre de controlo limpar os seus recursos
     
@@ -1048,14 +1059,12 @@ void * holding(void *t){
         while(fila_espera_chegadas->id_slot_shm <= 5){
             pthread_cond_wait(&nmr_aterragens, &mutex_fila_chegadas);
         }
-        printf("vou fazer holdings\n");
         contador = 0;
         max = 0;
         voos_chegada atual= fila_espera_chegadas;
         while ((atual->next!=NULL)){
             contador++;
             if(contador>5){
-                printf("este voo vai fazer um holding\n");
                 pthread_mutex_lock(&mutex_array_atr);
                 //SE for prioritario, nao tem holding
                 if(array_voos_chegada[atual->id_slot_shm].fuel <= (4 + array_voos_chegada[atual->id_slot_shm].eta + gs_configuracoes.dur_aterragem)){
@@ -1081,6 +1090,10 @@ void * holding(void *t){
                 write_log(mensagem);
                 sem_post(sem_log);
 
+                sem_wait(sem_estatisticas);
+                estatisticas->n_medio_holdings_aterragem = (estatisticas->n_medio_holdings_aterragem * fila_espera_chegadas->id_slot_shm + 1) / fila_espera_chegadas->id_slot_shm;
+                sem_post(sem_estatisticas);
+
                 pthread_mutex_unlock(&mutex_array_atr);
                 if(holding>max){
                     max=holding;
@@ -1097,15 +1110,15 @@ void * holding(void *t){
 }
 
 void sinal_estatisticas() {
-
+    printf("ESTATISTICAS:\n");
     printf("Número total de voos criados: %d\n", estatisticas->n_voos_criados);
-    printf("Número total de voos arerrados: %d\n", estatisticas->n_voos_aterrados);
+    printf("Número total de voos aterrados: %d\n", estatisticas->n_voos_aterrados);
     printf("Número total de voos descolados: %d\n", estatisticas->n_voos_descolados);
     printf("Número total de voos redirecionados: %d\n", estatisticas->n_voos_redirecionados);
     printf("Número total de voos rejeitados pela Torre de Controlo: %d\n", estatisticas->n_voos_rejeitados);
     printf("Tempo médio de espera para aterrar: %f\n", estatisticas->tempo_medio_aterrar);
     printf("Tempo médio de espera para descolar: %f\n", estatisticas->tempo_medio_descolar);
     printf("Número médio de manobras de holding por voo de aterragem: %f\n", estatisticas->n_medio_holdings_aterragem);
-    printf("Número médio de manobras de holding por voo urgente: %f\n", estatisticas->n_medio_holdings_aterragem);
+    printf("Número médio de manobras de holding por voo urgente: %f\n", estatisticas->n_medio_holdings_urgencia);
 
   }

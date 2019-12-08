@@ -1,3 +1,6 @@
+//Miguel Galvão-2018278986 Sofia Silva- 2018293871 
+
+
 //PARA COMPILAR: gcc -Wall -pthread main.c -o main -lrt
 #include "header.h"
  
@@ -26,8 +29,8 @@ void torre_controlo(){
     pthread_create(&thread_inicializadora, NULL, inicializar_shm, NULL);
     pthread_join(thread_inicializadora, NULL);
 
-    pthread_create(&thread_terminate, NULL, wait_lists, NULL);
-
+    pthread_create(&thread_terminate, NULL, wait_lists, NULL);          //thread que fica em standby mas depois limpa a torre de controlo
+    pthread_create(&thread_holding, NULL, holding, NULL);               //thread holding
     pthread_create(&thread_msq, NULL, recebe_msq,NULL);                 //thread que controla a msg queue
     pthread_create(&thread_fuel, NULL, decrementa_fuel_eta,NULL);       //thread que decrementa o fuel a cada UT
 
@@ -37,19 +40,17 @@ void torre_controlo(){
     sem_post(sem_log);
 
     //ESCALONAMENTO
-    
     while(1){
         if(running != 0){
             sem_post(terminar_server);                  //avisar a thread_terminate que pode terminar
             pthread_join(thread_terminate, NULL);       //esperar que termine
             exit(0);
         }
+
         //ARRIVALS
         pthread_mutex_lock(&mutex_array_atr);               //array smh
         pthread_mutex_lock(&mutex_fila_chegadas);           //fila espera
-        if(fila_espera_chegadas->next != NULL){
-            //printf("ha um voo para aterrar, eta = %d\n", array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta);
-        }
+
         if(fila_espera_chegadas->next!=NULL && array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta <= 0){
             id1 = fila_espera_chegadas->next->id_slot_shm;
             id2 = -1;
@@ -86,7 +87,7 @@ void torre_controlo(){
             sem_wait(sem_estatisticas);
             estatisticas->n_voos_aterrados ++;
             estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
-            if(id1 != -1){
+            if(id2 != -1){
                 estatisticas->n_voos_aterrados ++;
                 estatisticas->tempo_medio_aterrar = (estatisticas->tempo_medio_aterrar * (estatisticas->n_voos_aterrados - 1) + abs(array_voos_chegada[fila_espera_chegadas->next->id_slot_shm].eta)) / estatisticas->n_voos_aterrados;
             }
@@ -94,14 +95,11 @@ void torre_controlo(){
 
             pthread_mutex_lock(&mutex_fila_chegadas);
             remove_chegada();
-            pthread_mutex_unlock(&mutex_fila_chegadas);
-
             if(id2 != -1){
-                pthread_mutex_lock(&mutex_fila_chegadas);
                 remove_chegada();
-                pthread_mutex_unlock(&mutex_fila_chegadas);
             }
-
+            pthread_cond_signal(&is_atr_list_empty);
+            pthread_mutex_unlock(&mutex_fila_chegadas);
 
         } else{
             pthread_mutex_unlock(&mutex_fila_chegadas);
@@ -157,6 +155,7 @@ void torre_controlo(){
                 fila_espera_partidas = remove_partida(fila_espera_partidas);
             }
             fila_espera_partidas = remove_partida(fila_espera_partidas);
+            pthread_cond_signal(&is_prt_list_empty);
             pthread_mutex_unlock(&mutex_fila_partidas);
 
         }else{

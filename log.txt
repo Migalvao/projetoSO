@@ -52507,3 +52507,239 @@ AL TP437 init: 100 eta: 100 fuel: 10
 18:33:42 TP417 LANDING 28R started
 18:33:44 Voo TP417 criado no instante 60 ut, eta = 100 ut,fuel = 1000
 18:33:52 TP417 LANDING 28R concluded
+02:24:03 Gestor de simulação iniciado. Pid: 2073
+02:24:03 Torre de controlo iniciada. Pid: 2074
+02:24:04 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:24:08 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+02:24:11 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:24:15 NEW COMMAND => ARRIVAL TP437 init: 60 eta: 100 fuel: 1000
+02:24:18 Voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
+02:24:28 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:24:28 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:24:33 Voo TP437 criado no instante 60 ut, eta = 100 ut,fuel = 1000
+02:25:08 TP437 LANDING 28L started
+02:25:18 TP437 LANDING 28L concluded
+02:25:23 TP437 LANDING 28L started
+02:25:23 TP437 LANDING 28R started
+02:25:33 TP437 LANDING 28L concluded
+02:25:33 TP437 LANDING 28R concluded
+02:25:39 TP437 LANDING 28L started
+02:25:49 TP437 LANDING 28L concluded
+02:26:41 Server shutting down
+02:26:53 Gestor de simulação iniciado. Pid: 2106
+02:26:53 Torre de controlo iniciada. Pid: 2107
+02:26:56 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+02:27:08 Voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
+02:27:58 TP437 LANDING 28L started
+02:28:08 TP437 LANDING 28L concluded
+02:28:13 Server shutting down
+02:28:38 Gestor de simulação iniciado. Pid: 2126
+02:28:38 Torre de controlo iniciada. Pid: 2127
+02:28:41 NEW COMMAND => ARRIVAL TP437 init: 60 eta: 100 fuel: 1000
+02:28:44 NEW COMMAND => ARRIVAL TP437 init: 30 eta: 100 fuel: 1000
+02:28:46 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:28:48 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:28:53 Voo TP437 criado no instante 30 ut, eta = 100 ut,fuel = 1000
+02:29:03 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:29:03 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:29:08 Voo TP437 criado no instante 60 ut, eta = 100 ut,fuel = 1000
+02:29:43 TP437 LANDING 28L started
+02:29:53 TP437 LANDING 28L concluded
+02:29:59 TP437 LANDING 28L started
+02:29:59 TP437 LANDING 28R started
+02:30:09 TP437 LANDING 28L concluded
+02:30:09 TP437 LANDING 28R concluded
+02:30:14 TP437 LANDING 28L started
+02:30:24 TP437 LANDING 28L concluded
+02:30:53 Server shutting down
+02:43:40 Gestor de simulação iniciado. Pid: 2294
+02:43:40 Torre de controlo iniciada. Pid: 2295
+02:43:43 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:43:45 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:43:46 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:43:47 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:43:48 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:43:49 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:43:51 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:44:05 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:44:05 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:44:05 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:44:05 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:44:05 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:44:05 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:44:05 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:44:55 TP437 LANDING 28L started
+02:44:55 TP437 LANDING 28R started
+02:45:05 TP437 LANDING 28L concluded
+02:45:05 TP437 LANDING 28R concluded
+02:45:10 TP437 LANDING 28L started
+02:45:10 TP437 LANDING 28R started
+02:45:20 TP437 LANDING 28L concluded
+02:45:20 TP437 LANDING 28R concluded
+02:45:26 TP437 LANDING 28R started
+02:45:26 TP437 LANDING 28L started
+02:45:36 TP437 LANDING 28R concluded
+02:45:36 TP437 LANDING 28L concluded
+02:45:41 TP437 LANDING 28L started
+02:45:51 TP437 LANDING 28L concluded
+02:46:38 Server shutting down
+02:51:58 Gestor de simulação iniciado. Pid: 2534
+02:51:58 Torre de controlo iniciada. Pid: 2535
+02:52:00 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:52:01 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:52:02 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:52:03 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:52:04 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:52:04 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:52:05 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+02:52:23 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:52:23 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:52:23 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:52:23 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:52:23 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:52:23 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:52:23 TP437 HOLDING 88
+02:52:23 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+02:53:07 TP437 HOLDING 97
+02:53:07 TP437 HOLDING 86
+02:53:13 TP437 LANDING 28R started
+02:53:13 TP437 LANDING 28L started
+02:53:23 TP437 LANDING 28R concluded
+02:53:23 TP437 LANDING 28L concluded
+02:53:28 TP437 LANDING 28L started
+02:53:28 TP437 LANDING 28R started
+02:53:38 TP437 LANDING 28L concluded
+02:53:38 TP437 LANDING 28R concluded
+02:54:46 TP437 LANDING 28R started
+02:54:46 TP437 LANDING 28L started
+02:54:56 TP437 LANDING 28R concluded
+02:54:56 TP437 LANDING 28L concluded
+02:55:01 TP437 LANDING 28L started
+02:55:11 TP437 LANDING 28L concluded
+02:56:13 Server shutting down
+03:03:04 Gestor de simulação iniciado. Pid: 2695
+03:03:04 Torre de controlo iniciada. Pid: 2696
+03:03:06 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+03:03:07 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+03:03:08 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+03:03:09 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+03:03:11 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:03:12 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:03:13 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:03:13 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:03:19 Voo TP650 criado no instante 30 ut,takeoff = 100
+03:03:19 Voo TP650 criado no instante 30 ut,takeoff = 100
+03:03:19 Voo TP650 criado no instante 30 ut,takeoff = 100
+03:03:19 Voo TP650 criado no instante 30 ut,takeoff = 100
+03:03:23 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:03:27 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:03:29 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:03:29 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:03:29 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:03:29 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:03:29 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:03:29 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:03:29 TP437 HOLDING 88
+03:03:54 TP650 DEPARTURE 1L started
+03:03:54 TP650 DEPARTURE 1R started
+03:04:09 TP650 DEPARTURE 1R concluded
+03:04:09 TP650 DEPARTURE 1L concluded
+03:04:12 TP650 DEPARTURE 1L started
+03:04:12 TP650 DEPARTURE 1R started
+03:04:13 TP437 HOLDING 97
+03:04:27 TP650 DEPARTURE 1L concluded
+03:04:27 TP650 DEPARTURE 1R concluded
+03:04:30 TP437 LANDING 28L started
+03:04:30 TP437 LANDING 28R started
+03:04:40 TP437 LANDING 28L concluded
+03:04:40 TP437 LANDING 28R concluded
+03:04:45 TP437 LANDING 28R started
+03:04:45 TP437 LANDING 28L started
+03:04:55 TP437 LANDING 28R concluded
+03:04:55 TP437 LANDING 28L concluded
+03:05:51 TP437 LANDING 28R started
+03:05:51 TP437 LANDING 28L started
+03:06:01 TP437 LANDING 28R concluded
+03:06:01 TP437 LANDING 28L concluded
+03:06:07 Server shutting down
+03:38:07 Gestor de simulação iniciado. Pid: 3110
+03:38:07 Torre de controlo iniciada. Pid: 3111
+03:38:10 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:38:32 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:38:32 Server shutting down
+03:44:16 Gestor de simulação iniciado. Pid: 3195
+03:44:16 Torre de controlo iniciada. Pid: 3196
+03:44:20 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:44:41 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:44:41 Server shutting down
+03:52:41 Gestor de simulação iniciado. Pid: 3282
+03:52:41 Torre de controlo iniciada. Pid: 3283
+03:52:47 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 100 fuel: 1000
+03:53:06 Voo TP437 criado no instante 50 ut, eta = 100 ut,fuel = 1000
+03:53:56 TP437 LANDING 28L started
+03:54:06 TP437 LANDING 28L concluded
+03:58:23 Gestor de simulação iniciado. Pid: 3420
+03:58:23 Torre de controlo iniciada. Pid: 3421
+03:58:30 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 10 fuel: 1000
+03:58:48 Voo TP437 criado no instante 50 ut, eta = 10 ut,fuel = 1000
+03:58:53 TP437 LANDING 28L started
+03:59:03 TP437 LANDING 28L concluded
+03:59:08 Server shutting down
+03:59:35 Gestor de simulação iniciado. Pid: 3508
+03:59:35 Torre de controlo iniciada. Pid: 3509
+03:59:40 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 10 fuel: 1000
+04:00:00 Voo TP437 criado no instante 50 ut, eta = 10 ut,fuel = 1000
+04:00:04 TP437 LANDING 28L started
+04:00:14 TP437 LANDING 28L concluded
+04:00:20 Server shutting down
+04:30:50 Gestor de simulação iniciado. Pid: 3929
+04:30:50 Torre de controlo iniciada. Pid: 3930
+04:30:52 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+04:30:53 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+04:30:53 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+04:30:55 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 10 fuel: 1000
+04:30:55 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 10 fuel: 1000
+04:30:56 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 10 fuel: 1000
+04:30:59 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+04:31:01 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 10 fuel: 1000
+04:31:05 Voo TP650 criado no instante 30 ut,takeoff = 100
+04:31:05 Voo TP650 criado no instante 30 ut,takeoff = 100
+04:31:05 Voo TP650 criado no instante 30 ut,takeoff = 100
+04:31:05 Voo TP650 criado no instante 30 ut,takeoff = 100
+04:31:15 Voo TP437 criado no instante 50 ut, eta = 10 ut,fuel = 1000
+04:31:15 Voo TP437 criado no instante 50 ut, eta = 10 ut,fuel = 1000
+04:31:15 Voo TP437 criado no instante 50 ut, eta = 10 ut,fuel = 1000
+04:31:15 Voo TP437 criado no instante 50 ut, eta = 10 ut,fuel = 1000
+04:31:20 TP437 LANDING 28R started
+04:31:30 TP437 LANDING 28R concluded
+04:32:22 TP650 DEPARTURE 1R started
+04:32:22 TP650 DEPARTURE 1L started
+04:32:37 TP650 DEPARTURE 1R concluded
+04:32:37 TP650 DEPARTURE 1L concluded
+04:32:40 TP437 LANDING 28L started
+04:32:40 TP437 LANDING 28R started
+04:32:50 TP437 LANDING 28L concluded
+04:32:50 TP437 LANDING 28R concluded
+04:32:55 TP650 DEPARTURE 1R started
+04:32:55 TP650 DEPARTURE 1L started
+04:33:10 TP650 DEPARTURE 1R concluded
+04:33:10 TP650 DEPARTURE 1L concluded
+04:35:13 Gestor de simulação iniciado. Pid: 4127
+04:35:13 Torre de controlo iniciada. Pid: 4128
+04:35:14 COMMAND IGNORED => ARRIVAL TP437 init: 50 eta: 30 fuel: 1000
+04:35:15 NEW COMMAND => ARRIVAL TP437 init: 50 eta: 30 fuel: 1000
+04:35:15 COMMAND IGNORED => ARRIVAL TP437 init: 50 eta: 30 fuel: 1000
+04:35:18 NEW COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+04:35:18 COMMAND IGNORED => DEPARTURE TP650 init: 30 takeoff: 100
+04:35:19 COMMAND IGNORED => DEPARTURE TP650 init: 30 takeoff: 100
+04:35:21 COMMAND IGNORED => ARRIVAL TP437 init: 50 eta: 30 fuel: 1000
+04:35:23 COMMAND IGNORED => DEPARTURE TP650 init: 30 takeoff: 100
+04:35:28 Voo TP650 criado no instante 30 ut,takeoff = 100
+04:35:29 WRONG COMMAND => DEPARTURE TP650 init: 30 takeoff: 100
+04:35:30 COMMAND IGNORED => ARRIVAL TP437 init: 50 eta: 30 fuel: 1000
+04:35:38 Voo TP437 criado no instante 50 ut, eta = 30 ut,fuel = 1000
+04:35:53 TP437 LANDING 28L started
+04:36:03 TP437 LANDING 28L concluded
+04:36:08 TP650 DEPARTURE 1L started
+04:36:23 TP650 DEPARTURE 1L concluded
+04:36:26 Server shutting down
